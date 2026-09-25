@@ -21,10 +21,11 @@ namespace UnspottableExpanded
     {
         public const string PluginGuid = "com.viktordadi.unspottableexpanded";
         public const string PluginName = "Unspottable Expanded";
-        public const string PluginVersion = "0.9.8";
+        public const string PluginVersion = "0.9.9";
 
         private const string ArenaScene = "level_arena_main";
         private const string StartMenuScene = "menu_start_main";
+        private const string PostStartMenuScene = "menu_post_start_main";
         private const string StartMenuAiScene = "menu_start_ia";
         private const string GlobalPlayerUiScene = "global_player_ui";
         private const float HalfSize = 8.0f;
@@ -74,7 +75,7 @@ namespace UnspottableExpanded
             new Dictionary<int, Dictionary<string, QaInjectedAction>>();
         private readonly Dictionary<int, string> _qaActionNamesById = new Dictionary<int, string>();
 
-        // H2: QA-only headless gameplay bootstrap. Never active in a normal launch.
+        // H2: QA-only gameplay lifecycle driver. Never active in a normal launch.
         private bool _qaGameplayEnabled;
         private int _qaGameplayStage;
         private bool _qaGameplayReady;
@@ -125,9 +126,9 @@ namespace UnspottableExpanded
         private void Awake()
         {
             Logger.LogInfo("========================================");
-            Logger.LogInfo("Unspottable Expanded v0.9.8 H2.4 NORMAL LIFECYCLE loaded");
+            Logger.LogInfo("Unspottable Expanded v0.9.9 H2.5 LOCAL MENU SUBMIT loaded");
             Logger.LogInfo("SAFE CORE: normal vanilla menus/player selection/start flow preserved. No quick boot, solo start, Rewired manipulation, or movement overrides.");
-            Logger.LogInfo("QA FOUNDATION: dormant during normal launches. UE_QA_GAMEPLAY=1 drives the real boot/menu/gameplay lifecycle using process-local player-like Rewired input only.");
+            Logger.LogInfo("QA FOUNDATION: dormant during normal launches. UE_QA_GAMEPLAY=1 preserves the real boot/menu/gameplay lifecycle; the pre-Local UI is submitted through Unity UI, then gameplay uses process-local player-like Rewired input.");
             Logger.LogInfo("WHITE SQUARE LOGICAL BOUNDS enabled only when Arena is loaded.");
             Logger.LogInfo("Arena visuals are replaced and known Arena obstacle/interaction colliders are disabled after spawn.");
             Logger.LogInfo("Character positions are constrained to White Square's +/-7.55 playable bounds because Unspottable movement bypasses ordinary wall colliders.");
@@ -879,15 +880,35 @@ namespace UnspottableExpanded
                 {
                     if (string.Equals(activeScene, StartMenuScene, StringComparison.OrdinalIgnoreCase))
                     {
-                        SetQaGameplayStage(1, "normal start menu reached; waiting for native support scenes");
+                        SetQaGameplayStage(1, "Local selected through normal menu lifecycle; waiting for native support scenes");
                         _qaGameplayAt = now + 0.35f;
+                        return;
+                    }
+
+                    if (string.Equals(activeScene, PostStartMenuScene, StringComparison.OrdinalIgnoreCase))
+                    {
+                        string selectedUi;
+                        if (TrySubmitQaLocalMenuUi(out selectedUi))
+                        {
+                            RetryQaGameplay("submitted Local through Unity's selected menu UI" +
+                                (string.IsNullOrEmpty(selectedUi) ? string.Empty : "; selected=" + selectedUi),
+                                0.90f, 60f);
+                            return;
+                        }
+
+                        string localAction;
+                        TryPressQaLifecycleButton(0, 160, out localAction,
+                            "menu_accept", "action", "JoinGame", "punch", "start");
+                        RetryQaGameplay("waiting at Local/Online menu; Unity UI submit unavailable" +
+                            (string.IsNullOrEmpty(localAction) ? string.Empty : "; playerInput=" + localAction),
+                            0.85f, 60f);
                         return;
                     }
 
                     string bootAction;
                     TryPressQaLifecycleButton(0, 140, out bootAction,
                         "start", "menu_accept", "action");
-                    RetryQaGameplay("waiting for game's normal boot to reach menu_start_main; scene=" + activeScene +
+                    RetryQaGameplay("waiting for game's normal boot to reach Local/Online menu; scene=" + activeScene +
                         (string.IsNullOrEmpty(bootAction) ? string.Empty : "; playerInput=" + bootAction),
                         0.85f, 60f);
                     return;
@@ -917,7 +938,7 @@ namespace UnspottableExpanded
                         return;
                     }
 
-                    Logger.LogInfo("QA H2.4: normal menu/support lifecycle ready. No support scene was loaded by QA.");
+                    Logger.LogInfo("QA H2.5: normal menu/support lifecycle ready. No support scene was loaded by QA.");
                     SetQaGameplayStage(2, "joining P1 through normal player input");
                     _qaGameplayAt = now + 0.25f;
                     return;
@@ -929,7 +950,7 @@ namespace UnspottableExpanded
                     int menuPlayers = CountLiveComponents(_qaPlayers);
                     if (menuPlayers >= 1)
                     {
-                        Logger.LogInfo("QA H2.4: P1 appeared through normal player-selection flow.");
+                        Logger.LogInfo("QA H2.5: P1 appeared through normal player-selection flow.");
                         SetQaGameplayStage(3, "joining P2 through normal player input");
                         _qaGameplayAt = now + 0.50f;
                         return;
@@ -960,7 +981,7 @@ namespace UnspottableExpanded
                             WriteQaLifecycleProbe("NORMAL TWO-PLAYER SELECTION COMPLETE");
                         }
 
-                        Logger.LogInfo("QA H2.4: P2 appeared through normal player-selection flow; players=" + menuPlayers + ".");
+                        Logger.LogInfo("QA H2.5: P2 appeared through normal player-selection flow; players=" + menuPlayers + ".");
                         SetQaGameplayStage(4, "using player movement/input to enter the native START flow");
                         _qaGameplayAt = now + 0.65f;
                         return;
@@ -983,7 +1004,7 @@ namespace UnspottableExpanded
                 {
                     if (string.Equals(activeScene, "menu_levels", StringComparison.OrdinalIgnoreCase))
                     {
-                        Logger.LogInfo("QA H2.4: native START flow advanced to menu_levels without a QA scene load.");
+                        Logger.LogInfo("QA H2.5: native START flow advanced to menu_levels without a QA scene load.");
                         SetQaGameplayStage(5, "selecting the highlighted level through normal menu input");
                         _qaGameplayAt = now + 0.75f;
                         return;
@@ -1075,7 +1096,7 @@ namespace UnspottableExpanded
                     _qaGameplayStage = 7;
                     _qaGameplayMessage = "ready: normal lifecycle scene=" + activeScene +
                         ", players=" + playerCount + ", bots=" + botCount;
-                    Logger.LogInfo("QA H2.4 GAMEPLAY READY: normal lifecycle reached '" + activeScene +
+                    Logger.LogInfo("QA H2.5 GAMEPLAY READY: normal lifecycle reached '" + activeScene +
                         "'; players=" + playerCount + ", bots=" + botCount + ".");
                     return;
                 }
@@ -1084,6 +1105,165 @@ namespace UnspottableExpanded
             {
                 FailQaGameplay("stage " + _qaGameplayStage + " exception: " + ex.GetType().Name + ": " + ex.Message);
             }
+        }
+
+        private bool TrySubmitQaLocalMenuUi(out string selectedName)
+        {
+            selectedName = string.Empty;
+            try
+            {
+                Type eventSystemType = FindLoadedType("UnityEngine.EventSystems.EventSystem");
+                if (eventSystemType == null)
+                    return false;
+
+                PropertyInfo currentProperty = eventSystemType.GetProperty("current",
+                    BindingFlags.Static | BindingFlags.Public);
+                object eventSystem = currentProperty == null ? null : currentProperty.GetValue(null, null);
+                if (eventSystem == null)
+                    return false;
+
+                GameObject target = null;
+                PropertyInfo selectedProperty = eventSystemType.GetProperty("currentSelectedGameObject",
+                    BindingFlags.Instance | BindingFlags.Public);
+                if (selectedProperty != null)
+                    target = selectedProperty.GetValue(eventSystem, null) as GameObject;
+
+                if (target == null || !LooksLikeQaLocalMenuObject(target))
+                    target = FindQaLocalMenuObject();
+
+                if (target == null)
+                    return false;
+
+                selectedName = target.name ?? string.Empty;
+                if (!InvokeQaUiSubmit(target, eventSystem))
+                    return false;
+
+                Logger.LogInfo("QA H2.5 UI INPUT: submitted Local through Unity menu object '" +
+                    selectedName + "'.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("QA H2.5 Local UI submit failed: " + ex.GetType().Name + ": " + ex.Message);
+                return false;
+            }
+        }
+
+        private GameObject FindQaLocalMenuObject()
+        {
+            Type buttonType = FindLoadedType("UnityEngine.UI.Button");
+            if (buttonType == null)
+                return null;
+
+            try
+            {
+                UnityEngine.Object[] buttons = UnityEngine.Object.FindObjectsOfType(buttonType);
+                for (int i = 0; i < buttons.Length; i++)
+                {
+                    Component component = buttons[i] as Component;
+                    if (component == null || component.gameObject == null ||
+                        !component.gameObject.activeInHierarchy)
+                        continue;
+                    if (LooksLikeQaLocalMenuObject(component.gameObject))
+                        return component.gameObject;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private static bool LooksLikeQaLocalMenuObject(GameObject go)
+        {
+            if (go == null)
+                return false;
+
+            Transform cursor = go.transform;
+            for (int depth = 0; cursor != null && depth < 4; depth++, cursor = cursor.parent)
+            {
+                string objectName = cursor.name ?? string.Empty;
+                if (objectName.IndexOf("local", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                    objectName.IndexOf("online", StringComparison.OrdinalIgnoreCase) < 0)
+                    return true;
+            }
+
+            try
+            {
+                MonoBehaviour[] behaviours = go.GetComponentsInChildren<MonoBehaviour>(true);
+                for (int i = 0; i < behaviours.Length; i++)
+                {
+                    MonoBehaviour behaviour = behaviours[i];
+                    if (behaviour == null)
+                        continue;
+
+                    PropertyInfo textProperty = behaviour.GetType().GetProperty("text",
+                        BindingFlags.Instance | BindingFlags.Public);
+                    if (textProperty == null || textProperty.PropertyType != typeof(string) ||
+                        textProperty.GetIndexParameters().Length != 0)
+                        continue;
+
+                    string text = textProperty.GetValue(behaviour, null) as string;
+                    if (!string.IsNullOrEmpty(text) &&
+                        text.IndexOf("local", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                        text.IndexOf("online", StringComparison.OrdinalIgnoreCase) < 0)
+                        return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        private static bool InvokeQaUiSubmit(GameObject target, object eventSystem)
+        {
+            if (target == null || eventSystem == null)
+                return false;
+
+            Component[] components;
+            try { components = target.GetComponents<Component>(); }
+            catch { return false; }
+
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null)
+                    continue;
+
+                try
+                {
+                    MethodInfo onSubmit = component.GetType().GetMethod("OnSubmit",
+                        BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    if (onSubmit != null)
+                    {
+                        ParameterInfo[] parameters = onSubmit.GetParameters();
+                        if (parameters.Length == 1)
+                        {
+                            object eventData = Activator.CreateInstance(parameters[0].ParameterType,
+                                new object[] { eventSystem });
+                            onSubmit.Invoke(component, new object[] { eventData });
+                            return true;
+                        }
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    PropertyInfo onClickProperty = component.GetType().GetProperty("onClick",
+                        BindingFlags.Instance | BindingFlags.Public);
+                    object onClick = onClickProperty == null ? null : onClickProperty.GetValue(component, null);
+                    if (onClick == null)
+                        continue;
+
+                    MethodInfo invoke = onClick.GetType().GetMethod("Invoke",
+                        BindingFlags.Instance | BindingFlags.Public, null, Type.EmptyTypes, null);
+                    if (invoke == null)
+                        continue;
+
+                    invoke.Invoke(onClick, null);
+                    return true;
+                }
+                catch { }
+            }
+            return false;
         }
 
         private bool TryPressQaLifecycleButton(int playerId, int ms, out string selectedAction, params string[] candidates)
@@ -1114,7 +1294,7 @@ namespace UnspottableExpanded
 
                 PressQaButton(playerId, candidate, ms);
                 selectedAction = candidate;
-                Logger.LogInfo("QA H2.4 PLAYER INPUT: P" + (playerId + 1) + " pressed '" + candidate + "'.");
+                Logger.LogInfo("QA H2.5 PLAYER INPUT: P" + (playerId + 1) + " pressed '" + candidate + "'.");
                 return true;
             }
             return false;
@@ -1154,7 +1334,7 @@ namespace UnspottableExpanded
                 if (QaActionExists("MoveY"))
                     SetQaAxis(playerId, "MoveY", y, 650);
             }
-            Logger.LogInfo("QA H2.4 PLAYER INPUT: walking P1/P2 for native START search x=" +
+            Logger.LogInfo("QA H2.5 PLAYER INPUT: walking P1/P2 for native START search x=" +
                 x.ToString("0.0", CultureInfo.InvariantCulture) + ", y=" +
                 y.ToString("0.0", CultureInfo.InvariantCulture) + ".");
         }
@@ -1279,11 +1459,11 @@ namespace UnspottableExpanded
                 }
 
                 File.AppendAllText(_qaLifecycleProbePath, sb.ToString(), Encoding.UTF8);
-                Logger.LogInfo("QA H2.4: wrote targeted lifecycle probe '" + label + "'.");
+                Logger.LogInfo("QA H2.5: wrote targeted lifecycle probe '" + label + "'.");
             }
             catch (Exception ex)
             {
-                Logger.LogWarning("QA H2.4 lifecycle probe failed: " + ex.Message);
+                Logger.LogWarning("QA H2.5 lifecycle probe failed: " + ex.Message);
             }
         }
 
