@@ -9,3 +9,13 @@
 - Added focused snapshots, bounded polling, explicit cleanup (with cleanup failure promoted to FAIL), PASS/FAIL/SKIP result schema, and runner-facing `Invoke-QAAdapter.ps1`.
 - Sanitized evidence collection and removed Rewired player names/hardware model/absolute local paths from packaged evidence.
 - Added `QA_ADAPTER.md`, `AI_HANDOFF.md`, `MILESTONES.md`, and `TESTING.md` because those docs were absent from the recovered v0.9.5 package.
+
+
+# Focused change list — v0.9.7 H2.3
+
+- Used the first reliable revision-isolated Windows runner report as source of truth.
+- Confirmed build PASS and bootstrap stage-4 `menu-player-timeout` with zero gameplay players.
+- Restored `ControlerManager.InitStartScene()` + `resetAllControler()` exactly once after native support scenes are loaded.
+- Kept native `AssignKeyboardDebug` as the single P1 join path; no second raw `loadPlayer` call.
+- Kept support-scene loading entirely owned by Unspottable.
+- Removed obsolete H2 fields that were producing CS0169/CS0414 warning noise.

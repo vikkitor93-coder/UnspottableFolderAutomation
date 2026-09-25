@@ -1,4 +1,4 @@
-# AI handoff — UnspottableExpanded v0.9.6 QA verification
+# AI handoff — UnspottableExpanded v0.9.7 H2.3 native manager init
 
 > Provenance: `AI_HANDOFF.md`, `MILESTONES.md`, and `TESTING.md` were **absent** from the v0.9.5 H2.2 source package recovered from the newest available upgrade bundle. These files are newly created from the verified v0.9.5 source and the v0.9.6 changes; no missing prior handoff text was invented.
 
@@ -41,3 +41,34 @@ The recovered v0.9.5 package contains no game assemblies, installed game, Window
 ## NEXT ACTION
 
 On the Windows game machine, build/deploy v0.9.6 with `build.bat --no-launch`, then run `tools\Run-H2-Gameplay-SelfTest.ps1`. Inspect the generated adapter JSON. The key expected outcome is that `punch.execution` only passes on a correlated `PlayerPunch` transition and `punch.impact` only passes on reaction-state evidence. If ownership is unresolved or P2 is not present, preserve the SKIP and capture the sanitized evidence ZIP rather than weakening the assertion.
+
+
+## Real Windows evidence after runner isolation
+
+The revision-isolated Windows runner is now uploading reliable bounded reports. The first clean report on revision `4aaa4eed...` showed:
+
+- build: PASS;
+- bootstrap: FAIL at stage 4;
+- reason: `menu-player-timeout`;
+- active scene: `menu_start_main`;
+- PlayerUnspottable count: 0;
+- bot count: 0;
+- installed mod restoration: PASS.
+
+This narrows the failure to native local-player creation, not compilation, support-scene loading, or result upload.
+
+## v0.9.7 H2.3 change
+
+After the game itself has loaded `global_player_ui` and `menu_start_ia`, H2.3 now invokes
+`ControlerManager.InitStartScene()` and static `resetAllControler()` exactly once before
+the existing native keyboard assignment. This is evidence-backed by the earlier native fast-boot path,
+which used those manager initialization calls before `AssignKeyboardDebug`.
+
+H2.3 still does not manually load support scenes and does not pair `AssignKeyboardDebug` with a
+second raw `loadPlayer` for P1.
+
+## NEXT ACTION (v0.9.7)
+
+Run the revision-isolated Windows `mod-qa` job. If stage 4 now passes, inspect deterministic
+ownership/movement/punch assertions. If stage 4 still times out, do not add a second player or guess
+PlayMaker events; add a narrow bounded controller-manager result field or targeted one-time probe.

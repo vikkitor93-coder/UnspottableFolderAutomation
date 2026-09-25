@@ -20,3 +20,10 @@
 - **Q15 Failure cleanup:** intentionally fail/timeout one run and confirm synthetic input is cleared and prepared target state is restored.
 
 A milestone is not complete merely because a getter counter increases.
+
+
+## Real-run progress
+
+- **Q10 Real build:** COMPLETE — v0.9.6 built successfully against the user's installed game/BepInEx assemblies.
+- **H2 bootstrap support scenes:** COMPLETE — runner reached `menu_start_main` with native support scenes loaded.
+- **H2 native player creation:** ACTIVE — v0.9.6 stopped at stage 4 with zero `PlayerUnspottable`; v0.9.7 H2.3 restores the native ControlerManager init/reset sequence before keyboard assignment.
