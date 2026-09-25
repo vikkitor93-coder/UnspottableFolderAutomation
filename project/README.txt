@@ -1,25 +1,21 @@
-UNSPOTTABLE EXPANDED v0.9.7 — H2.3 NATIVE MANAGER INIT
+UNSPOTTABLE EXPANDED v0.9.8 — H2.4 NORMAL LIFECYCLE
 
 This is the Unity/BepInEx Unspottable mod, not the separate browser game.
 
 Normal launches preserve the known-good safe lifecycle. QA instrumentation is dormant unless UE_QA_MODE=1.
 
-Real Windows evidence from v0.9.6:
-- build PASS;
-- menu_start_main and native support scenes loaded;
-- H2 stopped at stage 4 with menu-player-timeout;
-- PlayerUnspottable count remained 0;
-- installed mod was restored successfully.
+H2.4 removes the rejected bootstrap shortcuts. In QA gameplay mode it:
+- launches the game normally in Unity batch/nographics mode;
+- never performs a direct QA scene load;
+- never initializes/resets ControlerManager or uses debug controller assignment;
+- never spawns or repositions a player;
+- waits for the game's own menu/support scenes;
+- joins P1 and P2 with process-local synthetic Rewired button values;
+- reaches the native START flow with ordinary MoveX/MoveY player input;
+- accepts the highlighted level with normal menu input;
+- declares gameplay-ready only after a real level_*_main scene contains both selected players.
 
-v0.9.7 changes only the QA bootstrap:
-- after Unspottable itself has loaded global_player_ui + menu_start_ia,
-  invoke ControlerManager.InitStartScene() and resetAllControler() exactly once;
-- then use the native keyboard assignment helper exactly once;
-- never manually load the support scenes;
-- never combine AssignKeyboardDebug with a second raw loadPlayer for P1;
-- remove obsolete H2 fields that produced CS0169/CS0414 warning noise.
-
-The deterministic v0.9.6 verification layer remains intact: injection, consumption,
-world movement, punch execution and punch impact are still separate assertions.
+The deterministic verification layer remains intact: injection, consumption, world movement,
+punch execution and punch impact are separate assertions. P2 independence remains evidence-gated.
 
 No new dependencies are downloaded.
