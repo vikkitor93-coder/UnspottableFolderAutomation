@@ -11,7 +11,11 @@ failure prevents later steps; SKIP preservation; no false gameplay PASS from exi
 upload branch separation; pending retry after lost response; automatic mode new
 revision detection, failure stop and run cap; interrupted deployment recovery.
 
-Not executed here: Windows batch launchers, Windows Job Objects/taskkill, interactive
+Windows CI also exercises Job Objects/taskkill, locks and cancellation. The first CI
+run found Windows ZipInfo filename normalization hiding raw backslashes; the extractor
+now validates orig_filename and the test fixture preserves original archive bytes.
+
+Not executed here: Windows batch launchers, interactive
 GitHub CLI login, live PC report uploads, .NET build against installed game assemblies,
 H2/bootstrap/gameplay, forced-window-close recovery on Windows. The release does not
 claim those passed. The code is published through the connected GitHub integration.

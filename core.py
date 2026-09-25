@@ -231,7 +231,8 @@ def extract_archive(data, destination):
         roots = set()
         seen = set()
         for member in members:
-            name = member.filename
+            # Windows ZipInfo normalizes backslashes; validate before that rewrite.
+            name = member.orig_filename
             parts = PurePosixPath(name).parts
             if not parts or name.startswith("/") or "\\" in name or ":" in name or any(
                 p in (".", "..") or p.rstrip(" .") != p or p.split(".")[0].upper() in

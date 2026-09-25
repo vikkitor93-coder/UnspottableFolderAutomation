@@ -40,7 +40,10 @@ class RunnerTests(unittest.TestCase):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as z:
             for name in names:
-                z.writestr(name, "test")
+                info = zipfile.ZipInfo("placeholder")
+                # Preserve raw archive bytes even on Windows, where __init__ normalizes separators.
+                info.filename = info.orig_filename = name
+                z.writestr(info, "test")
         return buf.getvalue()
 
     def test_archive_extracts_single_root(self):
