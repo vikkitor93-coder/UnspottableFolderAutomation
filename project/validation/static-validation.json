@@ -23,7 +23,7 @@
       "detail": "bad=None, remaining=[]"
     },
     {
-      "name": "version 0.9.8",
+      "name": "version 0.9.9",
       "pass": true,
       "detail": ""
     },
@@ -159,6 +159,16 @@
     },
     {
       "name": "H2 rendered run is not low-impact throttled",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 handles Local UI before player selection",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 Local UI does not target Online",
       "pass": true,
       "detail": ""
     }
