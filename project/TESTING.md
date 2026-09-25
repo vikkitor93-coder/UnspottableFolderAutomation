@@ -4,7 +4,7 @@ H1 remains an input-layer self-test. H2 is the full normal-lifecycle determinist
 
 ## H2 lifecycle policy
 
-H2 launches the real game with `-batchmode -nographics`. The mod must not load a scene directly, create/reposition a player, initialize/reset ControlerManager, assign controllers through debug helpers, or fire start FSM events. The harness may only observe state and provide process-local Rewired input values equivalent to player input.
+H2 currently launches the real game as a normal visible rendered process, with no `-batchmode` and no `-nographics`. This rendered diagnostic is intentional because the previous batch/nographics run exited from `menu_post_start_main` before stage 1. The mod must not load a scene directly, create/reposition a player, initialize/reset ControlerManager, assign controllers through debug helpers, or fire start FSM events. The harness may only observe state and provide process-local Rewired input values equivalent to player input.
 
 Expected stages are: normal boot → native support scenes → P1 join → P2 join → native START traversal → normal level selection → real gameplay actors → deterministic adapter. A failure at any stage is evidence; do not bypass it.
 
