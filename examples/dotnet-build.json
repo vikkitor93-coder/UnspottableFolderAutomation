@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "profile": "mod-build",
+  "steps": [
+    {
+      "id": "compile-mod",
+      "argv": ["dotnet", "build", "project/UnspottableExpanded.csproj", "--configuration", "Release", "--nologo"],
+      "timeout_seconds": 600
+    }
+  ]
+}

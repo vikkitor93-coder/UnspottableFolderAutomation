@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "ue.qa.policy-simulation.v1",
+  "status": "PASS",
+  "note": "Simulation of assertion policy only; does not execute Unity or game code. Correlation windows are 2.0 s.",
+  "cases": [
+    {
+      "name": "getter-only punch is not execution",
+      "pass": true,
+      "expected": "FAIL",
+      "actual": "FAIL",
+      "assertions": {
+        "input_injection": "PASS",
+        "input_consumption": "PASS",
+        "world_movement": "PASS",
+        "punch_execution": "FAIL",
+        "punch_impact": "FAIL",
+        "p2_independent": "SKIP"
+      },
+      "inputs": {
+        "injected": true,
+        "consumed": true,
+        "moved": true,
+        "target_available": true,
+        "target_displacement": 0.0,
+        "p2_supported": false,
+        "execution_delay_s": 0.15,
+        "reaction_delay_s": 0.1,
+        "fsm_transition": false,
+        "reaction": false
+      }
+    },
+    {
+      "name": "movement-only target change is not impact",
+      "pass": true,
+      "expected": "FAIL",
+      "actual": "FAIL",
+      "assertions": {
+        "input_injection": "PASS",
+        "input_consumption": "PASS",
+        "world_movement": "PASS",
+        "punch_execution": "PASS",
+        "punch_impact": "FAIL",
+        "p2_independent": "SKIP"
+      },
+      "inputs": {
+        "injected": true,
+        "consumed": true,
+        "moved": true,
+        "target_available": true,
+        "target_displacement": 0.8,
+        "p2_supported": false,
+        "execution_delay_s": 0.15,
+        "reaction_delay_s": 0.1,
+        "fsm_transition": true,
+        "reaction": false
+      }
+    },
+    {
+      "name": "fsm execution plus reaction can pass with P2 unsupported",
+      "pass": true,
+      "expected": "PASS",
+      "actual": "PASS",
+      "assertions": {
+        "input_injection": "PASS",
+        "input_consumption": "PASS",
+        "world_movement": "PASS",
+        "punch_execution": "PASS",
+        "punch_impact": "PASS",
+        "p2_independent": "SKIP"
+      },
+      "inputs": {
+        "injected": true,
+        "consumed": true,
+        "moved": true,
+        "target_available": true,
+        "target_displacement": 0.0,
+        "p2_supported": false,
+        "execution_delay_s": 0.15,
+        "reaction_delay_s": 0.1,
+        "fsm_transition": true,
+        "reaction": true
+      }
+    },
+    {
+      "name": "missing deterministic target is skip not pass",
+      "pass": true,
+      "expected": "SKIP",
+      "actual": "SKIP",
+      "assertions": {
+        "input_injection": "PASS",
+        "input_consumption": "PASS",
+        "world_movement": "PASS",
+        "punch_execution": "PASS",
+        "punch_impact": "SKIP",
+        "p2_independent": "SKIP"
+      },
+      "inputs": {
+        "injected": true,
+        "consumed": true,
+        "moved": true,
+        "target_available": false,
+        "target_displacement": 0.0,
+        "p2_supported": false,
+        "execution_delay_s": 0.15,
+        "reaction_delay_s": 0.1,
+        "fsm_transition": true,
+        "reaction": false
+      }
+    },
+    {
+      "name": "late unrelated PlayerPunch transition is rejected",
+      "pass": true,
+      "expected": "FAIL",
+      "actual": "FAIL",
+      "assertions": {
+        "input_injection": "PASS",
+        "input_consumption": "PASS",
+        "world_movement": "PASS",
+        "punch_execution": "FAIL",
+        "punch_impact": "FAIL",
+        "p2_independent": "SKIP"
+      },
+      "inputs": {
+        "injected": true,
+        "consumed": true,
+        "moved": true,
+        "target_available": true,
+        "target_displacement": 0.0,
+        "p2_supported": false,
+        "execution_delay_s": 2.5,
+        "reaction_delay_s": 0.1,
+        "fsm_transition": true,
+        "reaction": true
+      }
+    },
+    {
+      "name": "late target reaction is rejected",
+      "pass": true,
+      "expected": "FAIL",
+      "actual": "FAIL",
+      "assertions": {
+        "input_injection": "PASS",
+        "input_consumption": "PASS",
+        "world_movement": "PASS",
+        "punch_execution": "PASS",
+        "punch_impact": "FAIL",
+        "p2_independent": "SKIP"
+      },
+      "inputs": {
+        "injected": true,
+        "consumed": true,
+        "moved": true,
+        "target_available": true,
+        "target_displacement": 0.0,
+        "p2_supported": false,
+        "execution_delay_s": 0.15,
+        "reaction_delay_s": 2.5,
+        "fsm_transition": true,
+        "reaction": true
+      }
+    }
+  ]
+}

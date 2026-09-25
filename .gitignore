@@ -1,0 +1,12 @@
+.local/
+__pycache__/
+*.pyc
+bin/
+obj/
+*.user
+*.suo
+.env*
+*.dll
+*.exe
+*.pdb
+*.log

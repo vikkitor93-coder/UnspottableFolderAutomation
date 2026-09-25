@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "ue.qa.powershell-structure.v1",
+  "status": "PASS",
+  "checks": [
+    {
+      "file": "tools/QA-Common.ps1",
+      "pass": true,
+      "endState": "code",
+      "bad": null,
+      "remaining": []
+    },
+    {
+      "file": "tools/Invoke-QAAdapter.ps1",
+      "pass": true,
+      "endState": "code",
+      "bad": null,
+      "remaining": []
+    },
+    {
+      "file": "tools/Run-H1-Input-SelfTest.ps1",
+      "pass": true,
+      "endState": "code",
+      "bad": null,
+      "remaining": []
+    },
+    {
+      "file": "tools/Run-H2-Gameplay-SelfTest.ps1",
+      "pass": true,
+      "endState": "code",
+      "bad": null,
+      "remaining": []
+    },
+    {
+      "file": "tools/Run-Background-QA.ps1",
+      "pass": true,
+      "endState": "code",
+      "bad": null,
+      "remaining": []
+    },
+    {
+      "file": "tools/Run-Headless-QA.ps1",
+      "pass": true,
+      "endState": "code",
+      "bad": null,
+      "remaining": []
+    },
+    {
+      "file": "tools/Stop-Background-QA.ps1",
+      "pass": true,
+      "endState": "code",
+      "bad": null,
+      "remaining": []
+    },
+    {
+      "file": "tools/Show-QA-State.ps1",
+      "pass": true,
+      "endState": "code",
+      "bad": null,
+      "remaining": []
+    }
+  ],
+  "errors": [],
+  "note": "Lexical delimiter/string/comment structure check; not a substitute for the Windows PowerShell parser."
+}

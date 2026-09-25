@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "profile": "mod-qa",
+  "steps": [
+    {
+      "id": "mod-build-and-h2",
+      "argv": ["$PYTHON", "run_mod.py", "--state", "$STATE"],
+      "timeout_seconds": 900
+    }
+  ]
+}
