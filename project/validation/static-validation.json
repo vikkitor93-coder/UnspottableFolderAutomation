@@ -2,36 +2,166 @@
   "schemaVersion": "ue.qa.static-validation.v1",
   "status": "PASS",
   "checks": [
-    {"name":"Plugin.cs lexical close","pass":true,"detail":"end state=code"},
-    {"name":"Plugin.cs delimiters","pass":true,"detail":"bad=None, remaining=[]"},
-    {"name":"QaVerification.cs lexical close","pass":true,"detail":"end state=code"},
-    {"name":"QaVerification.cs delimiters","pass":true,"detail":"bad=None, remaining=[]"},
-    {"name":"version 0.9.8","pass":true,"detail":""},
-    {"name":"partial verifier hook","pass":true,"detail":""},
-    {"name":"legacy protocol retained","pass":true,"detail":""},
-    {"name":"legacy input commands retained","pass":true,"detail":""},
-    {"name":"no old H2 punch-counter assertion","pass":true,"detail":""},
-    {"name":"H2 no direct scene loads","pass":true,"detail":""},
-    {"name":"H2 no manager lifecycle mutation","pass":true,"detail":""},
-    {"name":"H2 requires two normal menu players","pass":true,"detail":""},
-    {"name":"H2 physical START uses movement input","pass":true,"detail":""},
-    {"name":"H2 waits for real gameplay scene","pass":true,"detail":""},
-    {"name":"punch execution requires FSM","pass":true,"detail":""},
-    {"name":"impact rejects movement-only proof","pass":true,"detail":""},
-    {"name":"P2 unsupported is skip","pass":true,"detail":""},
-    {"name":"cleanup present","pass":true,"detail":""},
-    {"name":"sanitized evidence helper","pass":true,"detail":""},
-    {"name":"no raw H2 evidence copy","pass":true,"detail":""},
-    {"name":"focused tick avoids scene scan","pass":true,"detail":""},
-    {"name":"reaction matching tokenized","pass":true,"detail":""},
-    {"name":"cleanup failure reported","pass":true,"detail":""},
-    {"name":"player names omitted from lifecycle probe","pass":true,"detail":""},
-    {"name":"hardware model omitted","pass":true,"detail":""},
-    {"name":"safe session omits pid","pass":true,"detail":""},
-    {"name":"QA_ADAPTER.md exists","pass":true,"detail":""},
-    {"name":"AI_HANDOFF.md exists","pass":true,"detail":""},
-    {"name":"MILESTONES.md exists","pass":true,"detail":""},
-    {"name":"TESTING.md exists","pass":true,"detail":""}
+    {
+      "name": "Plugin.cs lexical close",
+      "pass": true,
+      "detail": "end state=code"
+    },
+    {
+      "name": "Plugin.cs delimiters",
+      "pass": true,
+      "detail": "bad=None, remaining=[]"
+    },
+    {
+      "name": "QaVerification.cs lexical close",
+      "pass": true,
+      "detail": "end state=code"
+    },
+    {
+      "name": "QaVerification.cs delimiters",
+      "pass": true,
+      "detail": "bad=None, remaining=[]"
+    },
+    {
+      "name": "version 0.9.8",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "partial verifier hook",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "legacy protocol retained",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "legacy input commands retained",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no old H2 punch-counter assertion",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 no direct scene loads",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 no manager lifecycle mutation",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 requires two normal menu players",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 physical START uses movement input",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 waits for real gameplay scene",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "punch execution requires FSM",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "impact rejects movement-only proof",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "P2 unsupported is skip",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "cleanup present",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "sanitized evidence helper",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "no raw H2 evidence copy",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "focused tick avoids scene scan",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "reaction matching tokenized",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "cleanup failure reported",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "player names omitted from lifecycle probe",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "hardware model omitted",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "safe session omits pid",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "QA_ADAPTER.md exists",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "AI_HANDOFF.md exists",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "MILESTONES.md exists",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "TESTING.md exists",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 wrapper is rendered",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 rendered run is not low-impact throttled",
+      "pass": true,
+      "detail": ""
+    }
   ],
   "errors": []
 }
