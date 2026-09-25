@@ -1,10 +1,10 @@
 @echo off
 setlocal EnableExtensions
 cd /d "%~dp0"
-title Unspottable Expanded v0.9.8 - QA Verification
+title Unspottable Expanded v0.9.9 - QA Verification
 
 echo ============================================================
-echo  Unspottable Expanded v0.9.8 - QA VERIFICATION
+echo  Unspottable Expanded v0.9.9 - QA VERIFICATION
 echo  Stable White Square core + opt-in process-local QA input
 echo  Build + deploy + launch, NO PowerShell
 echo ============================================================
@@ -57,7 +57,7 @@ fc /b "%~dp0output\UnspottableExpanded.dll" "%TARGET%" >nul
 if errorlevel 1 goto :VERIFY_FAILED
 
 (
-  echo Unspottable Expanded 0.9.8 H2.4 NORMAL LIFECYCLE
+  echo Unspottable Expanded 0.9.9 H2.5 NORMAL LIFECYCLE
   echo Vanilla menus, player selection, start flow and input preserved.
   echo Normal launch: safe White Square core only. QA launch: opt-in telemetry + process-local verification harness.
   echo Deployed %DATE% %TIME%
@@ -70,7 +70,7 @@ echo Launching Unspottable normally...
 start "" /D "%GAME%" "%GAME%\Unspottable.exe"
 echo.
 echo ============================================================
-echo SUCCESS - v0.9.8 INSTALLED AND GAME LAUNCHED
+echo SUCCESS - v0.9.9 INSTALLED AND GAME LAUNCHED
 echo ============================================================
 echo.
 echo TEST:
@@ -88,7 +88,7 @@ exit /b 0
 :DEPLOY_ONLY
 echo.
 echo ============================================================
-echo SUCCESS - v0.9.8 BUILT AND INSTALLED (NOT LAUNCHED)
+echo SUCCESS - v0.9.9 BUILT AND INSTALLED (NOT LAUNCHED)
 echo ============================================================
 echo.
 exit /b 0
