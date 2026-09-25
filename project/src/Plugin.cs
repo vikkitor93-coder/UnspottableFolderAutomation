@@ -539,7 +539,7 @@ namespace UnspottableExpanded
                 "; Application.isBatchMode=" + Application.isBatchMode +
                 "; graphicsDevice='" + SafeGraphicsDeviceName() + "'.");
             Logger.LogInfo("QA BACKGROUND MODE: Application.runInBackground=True; lowImpact=" + _qaLowImpact + "; targetFps=" + (_qaLowImpact ? _qaTargetFps.ToString() : "unchanged") + ".");
-            Logger.LogInfo("QA STATE FILE: %LOCALAPPDATA%\UnspottableExpanded\QA\state.json");
+            Logger.LogInfo(@"QA STATE FILE: %LOCALAPPDATA%\UnspottableExpanded\QA\state.json");
 
             if (_qaInputEnabled)
             {
