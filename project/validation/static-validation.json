@@ -58,6 +58,16 @@
       "detail": ""
     },
     {
+      "name": "H2 handles Local UI before player selection",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 Local UI does not target Online",
+      "pass": true,
+      "detail": ""
+    },
+    {
       "name": "H2 requires two normal menu players",
       "pass": true,
       "detail": ""
@@ -69,6 +79,16 @@
     },
     {
       "name": "H2 waits for real gameplay scene",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 wrapper is rendered",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 rendered run is not low-impact throttled",
       "pass": true,
       "detail": ""
     },
@@ -149,26 +169,6 @@
     },
     {
       "name": "TESTING.md exists",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "H2 wrapper is rendered",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "H2 rendered run is not low-impact throttled",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "H2 handles Local UI before player selection",
-      "pass": true,
-      "detail": ""
-    },
-    {
-      "name": "H2 Local UI does not target Online",
       "pass": true,
       "detail": ""
     }
