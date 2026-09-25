@@ -13,7 +13,7 @@ import zipfile
 
 import app
 import core
-from qa_results import summarize_adapter, validate_summary
+from qa_results import summarize_adapter, summarize_bootstrap, validate_summary
 from recover import restore
 
 REV = "a" * 40
@@ -223,6 +223,18 @@ class RunnerTests(unittest.TestCase):
     def test_adapter_rejects_unrecognized_assertion(self):
         with self.assertRaises(ValueError):
             summarize_adapter({"schemaVersion":"ue.qa.adapter.v1", "status":"PASS", "assertions":[{"id":"secret"}]})
+
+    def test_bootstrap_summary_exposes_only_bounded_reason_code(self):
+        result = summarize_bootstrap({
+            "status": "FAIL", "reason": "timeout: native support scenes: global=False, ai=False",
+            "scene": "menu_start_main", "qaGameplayStage": 2, "playerCount": 0, "botCount": 0,
+            "private_path": r"C:\\Users\\Private"
+        })
+        self.assertEqual(result, {
+            "status": "FAIL", "stage": 2, "reason": "support-scenes-timeout",
+            "scene": "menu_start_main", "players": 0, "bots": 0,
+        })
+        self.assertNotIn("private_path", result)
 
     def test_recovery_restores_only_previous_dll(self):
         target = self.root / "game/BepInEx/plugins/UnspottableExpanded/UnspottableExpanded.dll"

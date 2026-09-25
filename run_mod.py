@@ -5,13 +5,13 @@ import os
 from pathlib import Path
 import shutil
 from core import Cancelled, RunnerError, atomic_json, check_stop, run_process
-from qa_results import summarize_adapter, validate_summary
+from qa_results import summarize_adapter, summarize_bootstrap, validate_summary
 
 
 def run(state):
     source = Path(__file__).resolve().parent / "project"
     game = Path(os.environ.get("UE_GAME_DIR", ""))
-    qa = dict(build="NOT_RUN", bootstrap="NOT_RUN", gameplay="NOT_RUN", assertions=[], error="none", restored=True)
+    qa = dict(build="NOT_RUN", bootstrap="NOT_RUN", bootstrap_stage=None, bootstrap_reason="not-run",\n              bootstrap_scene="unknown", bootstrap_players=None, bootstrap_bots=None,\n              gameplay="NOT_RUN", assertions=[], error="none", restored=True)
     target = game / "BepInEx" / "plugins" / "UnspottableExpanded" / "UnspottableExpanded.dll"
     backup = target.with_name("UnspottableExpanded.uqa-backup")
     marker = target.with_name("UnspottableExpanded.uqa-testing")
@@ -70,7 +70,13 @@ def run(state):
         bootstrap = results / "H2-bootstrap.json"
         if bootstrap.is_file():
             data = json.loads(bootstrap.read_text(encoding="utf-8-sig"))
-            qa["bootstrap"] = data.get("status") if data.get("status") in ("PASS", "FAIL", "SKIP") else "FAIL"
+            boot = summarize_bootstrap(data)
+            qa["bootstrap"] = boot["status"]
+            qa["bootstrap_stage"] = boot["stage"]
+            qa["bootstrap_reason"] = boot["reason"]
+            qa["bootstrap_scene"] = boot["scene"]
+            qa["bootstrap_players"] = boot["players"]
+            qa["bootstrap_bots"] = boot["bots"]
         adapter_files = list(results.glob("qa-adapter-gameplay-*.json"))
         if len(adapter_files) == 1:
             raw = json.loads(adapter_files[0].read_text(encoding="utf-8-sig"))
