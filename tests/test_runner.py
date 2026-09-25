@@ -122,6 +122,20 @@ class RunnerTests(unittest.TestCase):
     def test_mod_exit_zero_without_game_evidence_fails(self):
         self.assertEqual(self.job(["print('not a gameplay test')"], profile="mod-qa")["status"], "failed")
 
+    def test_bounded_fallback_report_keeps_valid_qa_diagnostics(self):
+        qa = {
+            "build":"PASS", "bootstrap":"FAIL", "bootstrap_stage":2,
+            "bootstrap_reason":"support-scenes-timeout", "bootstrap_scene":"menu_start_main",
+            "bootstrap_players":0, "bootstrap_bots":0, "gameplay":"NOT_RUN",
+            "assertions":[], "error":"bootstrap-failed", "restored":True,
+        }
+        core.atomic_json(self.state / "qa-summary.json", qa)
+        report = app._bounded_fallback_report(self.state, REV)
+        self.assertEqual(report["status"], "failed")
+        self.assertEqual(report["error"], "internal-error")
+        self.assertEqual(report["qa"], qa)
+        self.assertEqual(report["steps"], [])
+
     def test_stop_before_job_does_not_execute(self):
         (self.state / "STOP").touch()
         report = self.job(["raise SystemExit(0)"])

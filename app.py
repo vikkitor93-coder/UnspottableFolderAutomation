@@ -6,9 +6,35 @@ from pathlib import Path
 import shutil
 import sys
 import time
+import uuid
+from datetime import datetime, timezone
 from core import (VERSION, REPOSITORY, REPORT_BRANCH, RunnerError, Cancelled, helper_event,
                   atomic_json, check_stop, download_revision, latest_revision,
                   run_process, upload_report, validate_report, wait_cancellable)
+
+
+def _bounded_fallback_report(state, revision):
+    """Create a schema-valid failure report when the worker result itself is unusable."""
+    qa = None
+    qa_path = Path(state) / "qa-summary.json"
+    if qa_path.is_file():
+        try:
+            from qa_results import validate_summary
+            qa = validate_summary(json.loads(qa_path.read_text(encoding="utf-8")))
+        except (ValueError, AssertionError, KeyError, TypeError, OSError, json.JSONDecodeError):
+            qa = None
+    return validate_report({
+        "schema": 1,
+        "runner_version": VERSION,
+        "run_id": uuid.uuid4().hex,
+        "revision": revision,
+        "started_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "profile": "mod-qa",
+        "status": "failed",
+        "steps": [],
+        "error": "internal-error",
+        "qa": qa,
+    })
 
 
 def run_once(state, revision=None):
@@ -23,13 +49,19 @@ def run_once(state, revision=None):
         rc, _, _ = run_process([sys.executable, str(source / "worker.py"), "--state", str(state),
                                 "--revision", revision], source, state, timeout=22 * 3600,
                                inherit=True, cancel_grace=8)
-        if not session.is_file():
-            raise RunnerError("worker-did-not-produce-result")
-        report = validate_report(json.loads(session.read_text(encoding="utf-8")))
-        if report["revision"] != revision:
-            raise RunnerError("result-revision-mismatch")
-        if rc != 0 and report["status"] == "passed":
-            raise RunnerError("worker-result-mismatch")
+        try:
+            if not session.is_file():
+                raise ValueError("worker-did-not-produce-result")
+            report = validate_report(json.loads(session.read_text(encoding="utf-8")))
+            if report["revision"] != revision:
+                raise ValueError("result-revision-mismatch")
+            if rc != 0 and report["status"] == "passed":
+                raise ValueError("worker-result-mismatch")
+        except (ValueError, AssertionError, KeyError, TypeError, OSError, json.JSONDecodeError):
+            # Never strand a run locally just because the worker/result schema had a bug.
+            # Upload only the bounded allowlisted QA summary, if one survived.
+            report = _bounded_fallback_report(state, revision)
+            print("Worker result was invalid; uploading bounded diagnostic fallback.", flush=True)
         print(f"Result: {report['status'].upper()} ({report['profile']}).", flush=True)
         helper_event(state, "uploading")
         upload_report(state, report)
