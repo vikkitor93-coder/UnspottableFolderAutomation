@@ -11,7 +11,9 @@ from qa_results import summarize_adapter, summarize_bootstrap, validate_summary
 def run(state):
     source = Path(__file__).resolve().parent / "project"
     game = Path(os.environ.get("UE_GAME_DIR", ""))
-    qa = dict(build="NOT_RUN", bootstrap="NOT_RUN", bootstrap_stage=None, bootstrap_reason="not-run",\n              bootstrap_scene="unknown", bootstrap_players=None, bootstrap_bots=None,\n              gameplay="NOT_RUN", assertions=[], error="none", restored=True)
+    qa = dict(build="NOT_RUN", bootstrap="NOT_RUN", bootstrap_stage=None, bootstrap_reason="not-run",
+              bootstrap_scene="unknown", bootstrap_players=None, bootstrap_bots=None,
+              gameplay="NOT_RUN", assertions=[], error="none", restored=True)
     target = game / "BepInEx" / "plugins" / "UnspottableExpanded" / "UnspottableExpanded.dll"
     backup = target.with_name("UnspottableExpanded.uqa-backup")
     marker = target.with_name("UnspottableExpanded.uqa-testing")
