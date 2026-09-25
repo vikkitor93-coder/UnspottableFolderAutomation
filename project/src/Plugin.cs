@@ -21,7 +21,7 @@ namespace UnspottableExpanded
     {
         public const string PluginGuid = "com.viktordadi.unspottableexpanded";
         public const string PluginName = "Unspottable Expanded";
-        public const string PluginVersion = "0.9.6";
+        public const string PluginVersion = "0.9.7";
 
         private const string ArenaScene = "level_arena_main";
         private const string StartMenuScene = "menu_start_main";
@@ -86,9 +86,6 @@ namespace UnspottableExpanded
         private int _qaGameplayAttempts;
         private bool _qaGameplayManagerInitialized;
         private bool _qaGameplayP1Loaded;
-        private bool _qaGameplayP2Loaded;
-        private bool _qaGameplayGlobalLoadRequested;
-        private bool _qaGameplayAiLoadRequested;
         private bool _qaLifecycleProbePreWritten;
         private bool _qaLifecycleProbeMeadowWritten;
         private string _qaLifecycleProbePath;
@@ -131,7 +128,7 @@ namespace UnspottableExpanded
         private void Awake()
         {
             Logger.LogInfo("========================================");
-            Logger.LogInfo("Unspottable Expanded v0.9.6 QA VERIFICATION loaded");
+            Logger.LogInfo("Unspottable Expanded v0.9.7 H2.3 NATIVE MANAGER INIT loaded");
             Logger.LogInfo("SAFE CORE: normal vanilla menus/player selection/start flow preserved. No quick boot, solo start, Rewired manipulation, or movement overrides.");
             Logger.LogInfo("QA FOUNDATION: dormant during normal launches. UE_QA_GAMEPLAY=1 enables a QA-only native keyboard player bootstrap + Meadow test.");
             Logger.LogInfo("WHITE SQUARE LOGICAL BOUNDS enabled only when Arena is loaded.");
@@ -557,8 +554,6 @@ namespace UnspottableExpanded
                 _qaGameplayMessage = "starting";
                 _qaGameplayAt = Time.unscaledTime + 0.75f;
                 _qaGameplayStageStartedAt = Time.unscaledTime;
-                _qaGameplayGlobalLoadRequested = false;
-                _qaGameplayAiLoadRequested = false;
                 _qaLifecycleProbePreWritten = false;
                 _qaLifecycleProbeMeadowWritten = false;
                 try
@@ -880,7 +875,7 @@ namespace UnspottableExpanded
                 if (_qaGameplayStage == 0)
                 {
                     SetQaGameplayStage(1, "loading native local start scene");
-                    Logger.LogInfo("QA H2.2: loading '" + StartMenuScene + "'.");
+                    Logger.LogInfo("QA H2.3: loading '" + StartMenuScene + "'.");
                     SceneManager.LoadScene(StartMenuScene, LoadSceneMode.Single);
                     _qaGameplayAt = now + 0.75f;
                     return;
@@ -913,7 +908,7 @@ namespace UnspottableExpanded
                         return;
                     }
 
-                    Logger.LogInfo("QA H2.2: native support scenes loaded by the game; no fallback loads were issued.");
+                    Logger.LogInfo("QA H2.3: native support scenes loaded by the game; no fallback loads were issued.");
                     SetQaGameplayStage(3, "assigning one native keyboard player");
                     _qaGameplayAt = now + 0.50f;
                     return;
@@ -929,7 +924,7 @@ namespace UnspottableExpanded
                         return;
                     }
 
-                    Logger.LogInfo("QA H2.2: native keyboard bootstrap requested: " + detail);
+                    Logger.LogInfo("QA H2.3: native keyboard bootstrap requested: " + detail);
                     SetQaGameplayStage(4, "waiting for native menu player object/FSMs");
                     _qaGameplayAt = now + 0.50f;
                     return;
@@ -952,7 +947,7 @@ namespace UnspottableExpanded
                         WriteQaLifecycleProbe("PRE-MEADOW native keyboard player ready");
                     }
 
-                    Logger.LogInfo("QA H2.2: native menu PlayerUnspottable exists; count=" + menuPlayers + ".");
+                    Logger.LogInfo("QA H2.3: native menu PlayerUnspottable exists; count=" + menuPlayers + ".");
                     SetQaGameplayStage(5, "letting native player FSMs settle");
                     _qaGameplayAt = now + 2.50f;
                     return;
@@ -975,7 +970,7 @@ namespace UnspottableExpanded
 
                 if (_qaGameplayStage == 6)
                 {
-                    Logger.LogInfo("QA H2.2: loading '" + MeadowScene + "' after native keyboard lifecycle.");
+                    Logger.LogInfo("QA H2.3: loading '" + MeadowScene + "' after native keyboard lifecycle.");
                     SetQaGameplayStage(7, "waiting for real Meadow gameplay objects");
                     SceneManager.LoadScene(MeadowScene, LoadSceneMode.Single);
                     _qaGameplayAt = now + 1.0f;
@@ -1077,6 +1072,23 @@ namespace UnspottableExpanded
             {
                 if (!_qaGameplayManagerInitialized)
                 {
+                    // The real Windows runner proved H2.2 reached stage 4 with zero menu
+                    // players: AssignKeyboardDebug by itself did not complete player creation.
+                    // Earlier native fast-boot work showed ControlerManager's own start
+                    // initialization/reset is required before its debug assignment helper.
+                    // Do this only AFTER the game's support scenes are already loaded, and
+                    // never load those scenes ourselves.
+                    MethodInfo initStartScene = managerType.GetMethod("InitStartScene", instanceFlags);
+                    MethodInfo resetAll = managerType.GetMethod("resetAllControler", staticFlags);
+                    if (initStartScene == null || resetAll == null)
+                    {
+                        detail = "native ControlerManager init/reset methods unavailable";
+                        return false;
+                    }
+
+                    initStartScene.Invoke(manager, null);
+                    resetAll.Invoke(null, null);
+
                     FieldInfo online = managerType.GetField("online", instanceFlags);
                     if (online != null)
                         online.SetValue(manager, false);
@@ -1086,7 +1098,7 @@ namespace UnspottableExpanded
                         enableJoin.Invoke(manager, null);
 
                     _qaGameplayManagerInitialized = true;
-                    Logger.LogInfo("QA H2.2: preserving menu initialization; using native keyboard assignment instead of raw loadPlayer.");
+                    Logger.LogInfo("QA H2.3: InitStartScene/resetAllControler invoked exactly once after native support scenes loaded.");
                 }
 
                 if (!ReInput.isReady || ReInput.players.playerCount < 1)
@@ -1112,7 +1124,7 @@ namespace UnspottableExpanded
                     if (assignDebug != null)
                     {
                         assignDebug.Invoke(manager, new object[] { ReInput.controllers.Keyboard });
-                        Logger.LogInfo("QA H2.2: AssignKeyboardDebug(Rewired.Keyboard) invoked exactly once.");
+                        Logger.LogInfo("QA H2.3: AssignKeyboardDebug(Rewired.Keyboard) invoked exactly once.");
                     }
                     else
                     {
@@ -1123,7 +1135,7 @@ namespace UnspottableExpanded
                             return false;
                         }
                         assignKeyboard.Invoke(manager, new object[] { p1 });
-                        Logger.LogInfo("QA H2.2: AssignKeyboardToPlayer(Player1) fallback invoked exactly once.");
+                        Logger.LogInfo("QA H2.3: AssignKeyboardToPlayer(Player1) fallback invoked exactly once.");
                     }
 
                     _qaGameplayP1Loaded = true;

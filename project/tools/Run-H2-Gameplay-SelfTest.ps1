@@ -40,7 +40,7 @@ try{
         if(Test-Path $StatePath){
             try{$state=Get-Content $StatePath -Raw|ConvertFrom-Json}catch{$state=$null}
         }
-        if($state -and $state.pluginVersion -eq '0.9.6'){
+        if($state -and $state.pluginVersion -eq '0.9.7'){
             if([int]$state.qaGameplayStage -ne $last){
                 $last=[int]$state.qaGameplayStage
                 Write-Host ("  stage {0}: {1} | scene={2} players={3} bots={4}" -f $state.qaGameplayStage,$state.qaGameplayMessage,$state.scene,$state.playerCount,$state.botCount) -ForegroundColor DarkCyan

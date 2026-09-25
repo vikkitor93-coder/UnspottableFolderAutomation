@@ -6,7 +6,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>UnspottableExpanded</AssemblyName>
     <RootNamespace>UnspottableExpanded</RootNamespace>
-    <Version>0.9.6</Version>
+    <Version>0.9.7</Version>
     <Deterministic>true</Deterministic>
     <DebugType>portable</DebugType>
     <GameDir Condition="'$(UE_GAME_DIR)' != ''">$(UE_GAME_DIR)</GameDir>

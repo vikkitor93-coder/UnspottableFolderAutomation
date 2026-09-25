@@ -64,7 +64,7 @@ while ((Get-Date) -lt $deadline) {
     if (Test-Path $StatePath) {
         try {
             $state = Get-Content -LiteralPath $StatePath -Raw | ConvertFrom-Json
-            if ($state.pluginVersion -eq '0.9.6' -and $state.heartbeat -gt 0) { break }
+            if ($state.pluginVersion -eq '0.9.7' -and $state.heartbeat -gt 0) { break }
         } catch {}
     }
     Start-Sleep -Milliseconds 500
