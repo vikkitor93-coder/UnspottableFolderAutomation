@@ -38,7 +38,7 @@ function ConvertTo-UEQaSafeState {
         qaMode = $State.qaMode
         headlessRequested = $State.headlessRequested
         isBatchMode = $State.isBatchMode
-        graphicsDevice = $State.graphicsDevice # API family only in v0.9.6, never the hardware model.
+        graphicsDevice = $State.graphicsDevice # API family only in v0.9.8, never the hardware model.
         runInBackground = $State.runInBackground
         targetFps = $State.targetFps
         qaInputEnabled = $State.qaInputEnabled
