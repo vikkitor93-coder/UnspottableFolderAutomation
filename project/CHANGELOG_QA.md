@@ -29,3 +29,11 @@
 - Native START is exercised with ordinary MoveX/MoveY input rather than transform movement or PlayMaker events.
 - Level selection is accepted with ordinary menu input; gameplay-ready accepts any real level_*_main scene and requires both selected players.
 - Preserved deterministic ownership/movement/punch evidence and privacy-safe cleanup/evidence rules.
+
+
+## Rendered diagnostic follow-up
+
+- The first v0.9.8 batch/nographics run built successfully but exited from `menu_post_start_main` before H2 stage 1.
+- H2 now launches a normal visible rendered game window with only `-logFile`; `-batchmode` and `-nographics` are removed.
+- `UE_QA_HEADLESS=0`, low-impact throttling is disabled for this diagnostic, and BelowNormal process priority is no longer forced.
+- Lifecycle/player-input assertions are otherwise unchanged.
