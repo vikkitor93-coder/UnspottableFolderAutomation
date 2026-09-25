@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "runner_version": "0.1.0",
+  "run_id": "b7070ae0efaf4b27b30f4fe86681620c",
+  "revision": "e5eef40525033222afcfbed15adc8d92eca2f22b",
+  "started_utc": "2026-09-25T00:53:48Z",
+  "profile": "mod-qa",
+  "status": "failed",
+  "steps": [
+    {
+      "number": 1,
+      "status": "failed",
+      "exit_code": 2,
+      "duration_seconds": 52.3,
+      "compiler_codes": [
+        "CS0169",
+        "CS0414"
+      ],
+      "error": "command-failed"
+    }
+  ],
+  "error": "command-failed",
+  "qa": {
+    "build": "PASS",
+    "bootstrap": "FAIL",
+    "gameplay": "NOT_RUN",
+    "assertions": [],
+    "error": "bootstrap-failed",
+    "restored": true
+  }
+}
