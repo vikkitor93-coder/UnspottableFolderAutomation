@@ -6,7 +6,7 @@ This is the Unity/BepInEx mod for the commercial PC game Unspottable, not the se
 
 ## Evidence carried forward
 
-The v0.9.6 real Windows run built successfully but H2 stopped in `menu_start_main` at stage 4 with `menu-player-timeout` and zero `PlayerUnspottable` objects. v0.9.7 H2.3 then tried native controller-manager initialization plus debug keyboard assignment. The user rejected that direction and required the full game to run headless through its normal lifecycle, without skipped player selection or gameplay.
+The v0.9.6 real Windows run built successfully but H2 stopped in `menu_start_main` at stage 4 with `menu-player-timeout` and zero `PlayerUnspottable` objects. v0.9.7 H2.3 then tried native controller-manager initialization plus debug keyboard assignment. The user rejected that direction and required the full game to use its normal lifecycle without skipped player selection or gameplay. The first v0.9.8 batch/nographics run built successfully but exited from `menu_post_start_main` before H2 stage 1, so the next diagnostic intentionally uses a normal visible rendered launch.
 
 ## v0.9.8 H2.4 architecture
 
@@ -22,4 +22,4 @@ Evidence remains sanitized and bounded. No new dependencies are downloaded. Prop
 
 ## NEXT ACTION
 
-Run one revision-isolated Windows `mod-qa` manual job for v0.9.8. Inspect the matching report. The most useful first result is which normal-lifecycle stage succeeds/fails: boot, P1 join, P2 join, native START traversal, level selection, gameplay actors, or the deterministic adapter assertions. Do not reintroduce direct scene loads or controller-manager initialization to force a pass.
+Run one revision-isolated Windows `mod-qa` manual job for the rendered v0.9.8 H2.4 diagnostic. Inspect the matching report. The most useful first result is which normal-lifecycle stage succeeds/fails: boot, P1 join, P2 join, native START traversal, level selection, gameplay actors, or the deterministic adapter assertions. Do not reintroduce direct scene loads or controller-manager initialization to force a pass.
