@@ -1,10 +1,19 @@
 {
   "schemaVersion": "ue.qa.validation-summary.v1",
   "status": "PASS",
-  "note": "Static/source-policy, assertion-policy simulation, and PowerShell lexical validation only. Real Unity/game execution requires the Windows manual run.",
+  "note": "Static/source-policy, assertion-policy simulation, and PowerShell lexical validation PASS for the rendered H2.4 diagnostic. Real Unity/game execution requires the Windows manual run.",
   "results": [
-    {"file":"static-validation.json","status":"PASS"},
-    {"file":"policy-simulation.json","status":"PASS"},
-    {"file":"powershell-structure.json","status":"PASS"}
+    {
+      "file": "static-validation.json",
+      "status": "PASS"
+    },
+    {
+      "file": "policy-simulation.json",
+      "status": "PASS"
+    },
+    {
+      "file": "powershell-structure.json",
+      "status": "PASS"
+    }
   ]
 }
