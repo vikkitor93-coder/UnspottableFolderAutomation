@@ -19,3 +19,13 @@
 - Kept native `AssignKeyboardDebug` as the single P1 join path; no second raw `loadPlayer` call.
 - Kept support-scene loading entirely owned by Unspottable.
 - Removed obsolete H2 fields that were producing CS0169/CS0414 warning noise.
+
+
+# Focused change list — v0.9.8 H2.4
+
+- Replaced H2 direct scene loading with observation of the game's real boot/menu/gameplay lifecycle.
+- Removed H2 calls that initialized/reset the controller manager, assigned keyboard players, disabled join, or otherwise manufactured lifecycle state.
+- Player selection now requires two real menu PlayerUnspottable objects created after player-like Rewired join input.
+- Native START is exercised with ordinary MoveX/MoveY input rather than transform movement or PlayMaker events.
+- Level selection is accepted with ordinary menu input; gameplay-ready accepts any real level_*_main scene and requires both selected players.
+- Preserved deterministic ownership/movement/punch evidence and privacy-safe cleanup/evidence rules.
