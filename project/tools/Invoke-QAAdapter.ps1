@@ -29,7 +29,7 @@ function Snapshot([int]$id){ return To-Obj (Send-UEQaCommand ("QA SNAPSHOT {0}" 
 $status='FAIL';$exitCode=4;$info=$null;$caps=$null;$actors=$null;$cleanup=[ordered]@{inputCleared=$false;worldRestored=$false}
 try {
     $info=To-Obj (Send-UEQaCommand 'INFO')
-    if(!$info.ok -or !$info.qaVerification){throw 'QA verification extension is unavailable. Build/deploy v0.9.6 first.'}
+    if(!$info.ok -or !$info.qaVerification){throw 'QA verification extension is unavailable. Build/deploy v0.9.8 first.'}
     $caps=To-Obj (Send-UEQaCommand 'QA CAPABILITIES')
     $actors=To-Obj (Send-UEQaCommand 'QA ACTORS')
     if(!$caps.ok -or !$actors.ok){throw 'QA capability/actor query failed.'}
