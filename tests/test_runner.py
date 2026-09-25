@@ -79,7 +79,7 @@ class RunnerTests(unittest.TestCase):
         (self.state / "STOP").touch()
         with patch("app.latest_revision") as request:
             with self.assertRaises(core.Cancelled):
-                app.automatic(self.state)
+                app.automatic(self.state, REV)
             request.assert_not_called()
 
     def test_archive_rejects_traversal_windows_paths_and_duplicate_names(self):
@@ -121,6 +121,28 @@ class RunnerTests(unittest.TestCase):
 
     def test_mod_exit_zero_without_game_evidence_fails(self):
         self.assertEqual(self.job(["print('not a gameplay test')"], profile="mod-qa")["status"], "failed")
+
+    def test_new_revision_is_delegated_to_matching_downloaded_app(self):
+        newer = "b" * 40
+        delegated = self.root / "delegated"
+        delegated.mkdir()
+        (delegated / "app.py").write_text("pass")
+        core.atomic_json(self.state / "last-run.json", {"revision": newer, "status": "failed"})
+        with patch("app.download_revision", return_value=delegated), \
+             patch("app.run_process", return_value=(1, b"", [])) as run:
+            result = app.run_once(self.state, newer, REV)
+        self.assertEqual(result, {"revision": newer, "status": "failed"})
+        argv = run.call_args.args[0]
+        self.assertIn("--exact-once", argv)
+        self.assertEqual(argv[argv.index("--revision") + 1], newer)
+
+    def test_same_revision_runs_without_cross_revision_download(self):
+        with patch("app._run_exact_from_source", return_value={"revision": REV, "status": "failed"}) as exact, \
+             patch("app.download_revision") as download:
+            result = app.run_once(self.state, REV, REV)
+        self.assertEqual(result["status"], "failed")
+        exact.assert_called_once()
+        download.assert_not_called()
 
     def test_bounded_fallback_report_keeps_valid_qa_diagnostics(self):
         qa = {
@@ -214,8 +236,8 @@ class RunnerTests(unittest.TestCase):
     def test_auto_skips_same_revision_and_stops_after_failure(self):
         core.atomic_json(self.state / "last-run.json", {"revision": REV, "status": "passed"})
         with patch("app.wait_cancellable"), patch("app.latest_revision", side_effect=[REV, "b"*40]), patch("app.run_once", return_value={"status": "failed"}) as run:
-            app.automatic(self.state)
-            run.assert_called_once_with(self.state, "b"*40)
+            app.automatic(self.state, REV)
+            run.assert_called_once_with(self.state, "b"*40, REV)
 
     def test_auto_requires_successful_manual_result(self):
         core.atomic_json(self.state / "last-run.json", {"revision": REV, "status": "failed"})
@@ -225,7 +247,7 @@ class RunnerTests(unittest.TestCase):
     def test_auto_stops_at_run_limit(self):
         core.atomic_json(self.state / "last-run.json", {"revision": REV, "status": "passed"})
         with patch("app.wait_cancellable"), patch("app.latest_revision", side_effect=["b"*40,"c"*40]), patch("app.run_once", return_value={"status": "passed"}) as run:
-            app.automatic(self.state, max_runs=2)
+            app.automatic(self.state, REV, max_runs=2)
             self.assertEqual(run.call_count, 2)
 
     def test_adapter_retains_skip_drops_all_free_text(self):
