@@ -1,4 +1,4 @@
-# QA milestones — v0.9.8
+# QA milestones — v0.9.9
 
 ## Completed in source
 
@@ -10,11 +10,11 @@
 - Q8 privacy-safe evidence.
 - Q9 protocol 4/backward-compatible bridge commands.
 - Q10 real build was proven on v0.9.6 against the user's installed assemblies.
-- H2.4 source removes direct scene loads/player manufacturing and uses normal lifecycle + player-like input only.
+- H2.5 source removes direct scene loads/player manufacturing and uses normal lifecycle + player-like input only.
 
 ## Pending real-game validation
 
-- Q10b build v0.9.8 on the Windows game machine.
+- Q10b build v0.9.9 on the Windows game machine.
 - Q11a normal P1 join through synthetic player-like input.
 - Q11b normal P2 join through synthetic player-like input.
 - Q11c native physical START flow reached by ordinary movement input.
