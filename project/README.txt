@@ -1,10 +1,10 @@
-UNSPOTTABLE EXPANDED v0.9.8 — H2.4 NORMAL LIFECYCLE
+UNSPOTTABLE EXPANDED v0.9.9 — H2.5 NORMAL LIFECYCLE
 
 This is the Unity/BepInEx Unspottable mod, not the separate browser game.
 
 Normal launches preserve the known-good safe lifecycle. QA instrumentation is dormant unless UE_QA_MODE=1.
 
-H2.4 removes the rejected bootstrap shortcuts. The current diagnostic variant is rendered so the real menu/video flow can be observed. In QA gameplay mode it:
+H2.5 removes the rejected bootstrap shortcuts. The current diagnostic variant is rendered so the real menu/video flow can be observed. In QA gameplay mode it:
 - launches the game as a normal visible rendered window (no -batchmode / -nographics);
 - never performs a direct QA scene load;
 - never initializes/resets ControlerManager or uses debug controller assignment;
