@@ -21,13 +21,12 @@ namespace UnspottableExpanded
     {
         public const string PluginGuid = "com.viktordadi.unspottableexpanded";
         public const string PluginName = "Unspottable Expanded";
-        public const string PluginVersion = "0.9.7";
+        public const string PluginVersion = "0.9.8";
 
         private const string ArenaScene = "level_arena_main";
         private const string StartMenuScene = "menu_start_main";
         private const string StartMenuAiScene = "menu_start_ia";
         private const string GlobalPlayerUiScene = "global_player_ui";
-        private const string MeadowScene = "level_meadow_main";
         private const float HalfSize = 8.0f;
         private const float PlayableBound = 7.55f;
 
@@ -84,8 +83,6 @@ namespace UnspottableExpanded
         private float _qaGameplayAt;
         private float _qaGameplayStageStartedAt;
         private int _qaGameplayAttempts;
-        private bool _qaGameplayManagerInitialized;
-        private bool _qaGameplayP1Loaded;
         private bool _qaLifecycleProbePreWritten;
         private bool _qaLifecycleProbeMeadowWritten;
         private string _qaLifecycleProbePath;
@@ -128,9 +125,9 @@ namespace UnspottableExpanded
         private void Awake()
         {
             Logger.LogInfo("========================================");
-            Logger.LogInfo("Unspottable Expanded v0.9.7 H2.3 NATIVE MANAGER INIT loaded");
+            Logger.LogInfo("Unspottable Expanded v0.9.8 H2.4 NORMAL LIFECYCLE loaded");
             Logger.LogInfo("SAFE CORE: normal vanilla menus/player selection/start flow preserved. No quick boot, solo start, Rewired manipulation, or movement overrides.");
-            Logger.LogInfo("QA FOUNDATION: dormant during normal launches. UE_QA_GAMEPLAY=1 enables a QA-only native keyboard player bootstrap + Meadow test.");
+            Logger.LogInfo("QA FOUNDATION: dormant during normal launches. UE_QA_GAMEPLAY=1 drives the real boot/menu/gameplay lifecycle using process-local player-like Rewired input only.");
             Logger.LogInfo("WHITE SQUARE LOGICAL BOUNDS enabled only when Arena is loaded.");
             Logger.LogInfo("Arena visuals are replaced and known Arena obstacle/interaction colliders are disabled after spawn.");
             Logger.LogInfo("Character positions are constrained to White Square's +/-7.55 playable bounds because Unspottable movement bypasses ordinary wall colliders.");
@@ -562,7 +559,7 @@ namespace UnspottableExpanded
                         File.Delete(_qaLifecycleProbePath);
                 }
                 catch { }
-                Logger.LogInfo("QA H2 GAMEPLAY HARNESS: ENABLED. Native support initialization is preserved; deterministic verification extension is available through QA bridge commands.");
+                Logger.LogInfo("QA H2 GAMEPLAY HARNESS: ENABLED. H2 observes the real lifecycle and supplies only player-like Rewired input; no scene loads, player spawning, or manager initialization.");
             }
 
             StartQaBridge();
@@ -872,139 +869,214 @@ namespace UnspottableExpanded
 
             try
             {
+                string activeScene = SceneManager.GetActiveScene().name ?? string.Empty;
+
+                // H2.4 deliberately never performs a direct scene load and never invokes
+                // ControlerManager initialization/assignment helpers. The game owns every
+                // lifecycle transition. QA only returns synthetic values from the same
+                // Rewired getters normal local-player input uses.
                 if (_qaGameplayStage == 0)
                 {
-                    SetQaGameplayStage(1, "loading native local start scene");
-                    Logger.LogInfo("QA H2.3: loading '" + StartMenuScene + "'.");
-                    SceneManager.LoadScene(StartMenuScene, LoadSceneMode.Single);
-                    _qaGameplayAt = now + 0.75f;
+                    if (string.Equals(activeScene, StartMenuScene, StringComparison.OrdinalIgnoreCase))
+                    {
+                        SetQaGameplayStage(1, "normal start menu reached; waiting for native support scenes");
+                        _qaGameplayAt = now + 0.35f;
+                        return;
+                    }
+
+                    string bootAction;
+                    TryPressQaLifecycleButton(0, 140, out bootAction,
+                        "start", "menu_accept", "action");
+                    RetryQaGameplay("waiting for game's normal boot to reach menu_start_main; scene=" + activeScene +
+                        (string.IsNullOrEmpty(bootAction) ? string.Empty : "; playerInput=" + bootAction),
+                        0.85f, 60f);
                     return;
                 }
 
                 if (_qaGameplayStage == 1)
                 {
-                    if (!string.Equals(SceneManager.GetActiveScene().name, StartMenuScene, StringComparison.OrdinalIgnoreCase))
+                    if (!string.Equals(activeScene, StartMenuScene, StringComparison.OrdinalIgnoreCase))
                     {
-                        RetryQaGameplay("waiting for menu_start_main", 0.25f, 20f);
+                        RetryQaGameplay("normal start menu not stable; scene=" + activeScene, 0.35f, 15f);
                         return;
                     }
 
-                    SetQaGameplayStage(2, "waiting for game's own support-scene loader");
-                    _qaGameplayAt = now + 0.35f;
+                    bool globalReady = SceneManager.GetSceneByName(GlobalPlayerUiScene).isLoaded;
+                    bool aiReady = SceneManager.GetSceneByName(StartMenuAiScene).isLoaded;
+                    if (!globalReady || !aiReady || !SafeRewiredReady())
+                    {
+                        RetryQaGameplay("waiting for game's own support scenes/Rewired: global=" + globalReady +
+                            ", ai=" + aiReady + ", rewired=" + SafeRewiredReady(), 0.35f, 25f);
+                        return;
+                    }
+
+                    if (SafeRewiredPlayerCount() < 2)
+                    {
+                        RetryQaGameplay("normal two-player selection requires two Rewired player slots; available=" +
+                            SafeRewiredPlayerCount(), 0.50f, 20f);
+                        return;
+                    }
+
+                    Logger.LogInfo("QA H2.4: normal menu/support lifecycle ready. No support scene was loaded by QA.");
+                    SetQaGameplayStage(2, "joining P1 through normal player input");
+                    _qaGameplayAt = now + 0.25f;
                     return;
                 }
 
                 if (_qaGameplayStage == 2)
                 {
-                    bool globalReady = SceneManager.GetSceneByName(GlobalPlayerUiScene).isLoaded;
-                    bool aiReady = SceneManager.GetSceneByName(StartMenuAiScene).isLoaded;
-
-                    if (!globalReady || !aiReady)
+                    RefreshQaObjects();
+                    int menuPlayers = CountLiveComponents(_qaPlayers);
+                    if (menuPlayers >= 1)
                     {
-                        // v0.9.4 proved our fallback request raced the game's own async loader
-                        // and produced duplicate support scenes. v0.9.5 NEVER requests them.
-                        RetryQaGameplay("native support scenes: global=" + globalReady + ", ai=" + aiReady,
-                            0.35f, 20f);
+                        Logger.LogInfo("QA H2.4: P1 appeared through normal player-selection flow.");
+                        SetQaGameplayStage(3, "joining P2 through normal player input");
+                        _qaGameplayAt = now + 0.50f;
                         return;
                     }
 
-                    Logger.LogInfo("QA H2.3: native support scenes loaded by the game; no fallback loads were issued.");
-                    SetQaGameplayStage(3, "assigning one native keyboard player");
-                    _qaGameplayAt = now + 0.50f;
+                    string joinAction;
+                    if (!TryPressQaLifecycleButton(0, 180, out joinAction,
+                        "JoinGame", "action", "menu_accept", "start"))
+                    {
+                        RetryQaGameplay("P1 join input unavailable; mapped Rewired join/menu action not found",
+                            0.75f, 20f);
+                        return;
+                    }
+
+                    RetryQaGameplay("waiting for P1 after normal input '" + joinAction + "'", 0.75f, 20f);
                     return;
                 }
 
                 if (_qaGameplayStage == 3)
                 {
-                    string detail;
-                    if (!TryPrepareQaNativePlayers(out detail))
+                    RefreshQaObjects();
+                    int menuPlayers = CountLiveComponents(_qaPlayers);
+                    if (menuPlayers >= 2)
                     {
-                        _qaGameplayMessage = detail;
-                        RetryQaGameplay(detail, 0.35f, 20f);
+                        if (!_qaLifecycleProbePreWritten)
+                        {
+                            _qaLifecycleProbePreWritten = true;
+                            WriteQaLifecycleProbe("NORMAL TWO-PLAYER SELECTION COMPLETE");
+                        }
+
+                        Logger.LogInfo("QA H2.4: P2 appeared through normal player-selection flow; players=" + menuPlayers + ".");
+                        SetQaGameplayStage(4, "using player movement/input to enter the native START flow");
+                        _qaGameplayAt = now + 0.65f;
                         return;
                     }
 
-                    Logger.LogInfo("QA H2.3: native keyboard bootstrap requested: " + detail);
-                    SetQaGameplayStage(4, "waiting for native menu player object/FSMs");
-                    _qaGameplayAt = now + 0.50f;
+                    string joinAction;
+                    if (!TryPressQaLifecycleButton(1, 180, out joinAction,
+                        "JoinGame", "action", "menu_accept", "start"))
+                    {
+                        RetryQaGameplay("P2 join input unavailable; Rewired player 1 or mapped join action unavailable",
+                            0.75f, 24f);
+                        return;
+                    }
+
+                    RetryQaGameplay("waiting for P2 after normal input '" + joinAction + "'", 0.75f, 24f);
                     return;
                 }
 
                 if (_qaGameplayStage == 4)
                 {
-                    RefreshQaObjects();
-                    int menuPlayers = CountLiveComponents(_qaPlayers);
-                    if (menuPlayers < 1)
+                    if (string.Equals(activeScene, "menu_levels", StringComparison.OrdinalIgnoreCase))
                     {
-                        RetryQaGameplay("waiting for native menu PlayerUnspottable, currently " + menuPlayers,
-                            0.35f, 12f);
+                        Logger.LogInfo("QA H2.4: native START flow advanced to menu_levels without a QA scene load.");
+                        SetQaGameplayStage(5, "selecting the highlighted level through normal menu input");
+                        _qaGameplayAt = now + 0.75f;
                         return;
                     }
 
-                    if (!_qaLifecycleProbePreWritten)
+                    if (!string.Equals(activeScene, StartMenuScene, StringComparison.OrdinalIgnoreCase))
                     {
-                        _qaLifecycleProbePreWritten = true;
-                        WriteQaLifecycleProbe("PRE-MEADOW native keyboard player ready");
+                        if (IsQaGameplayMainScene(activeScene))
+                        {
+                            SetQaGameplayStage(6, "normal lifecycle reached gameplay; waiting for actors");
+                            _qaGameplayAt = now + 0.50f;
+                            return;
+                        }
+                        RetryQaGameplay("waiting for native START transition; scene=" + activeScene, 0.50f, 40f);
+                        return;
                     }
 
-                    Logger.LogInfo("QA H2.3: native menu PlayerUnspottable exists; count=" + menuPlayers + ".");
-                    SetQaGameplayStage(5, "letting native player FSMs settle");
-                    _qaGameplayAt = now + 2.50f;
+                    // The normal Local flow uses a physical START area. We do not move a
+                    // transform or send a PlayMaker event. Instead, move the selected
+                    // players with ordinary MoveX/MoveY values in a deterministic search.
+                    // If the build also exposes a normal start/menu action, pulse it too.
+                    DriveQaStartAreaSearch(_qaGameplayAttempts);
+                    if ((_qaGameplayAttempts % 4) == 0)
+                    {
+                        string startAction;
+                        TryPressQaLifecycleButton(0, 160, out startAction,
+                            "start", "menu_accept", "action");
+                    }
+                    RetryQaGameplay("walking selected players through the native START area; attempt=" +
+                        (_qaGameplayAttempts + 1), 0.80f, 40f);
                     return;
                 }
 
                 if (_qaGameplayStage == 5)
                 {
-                    RefreshQaObjects();
-                    if (CountLiveComponents(_qaPlayers) < 1)
+                    if (IsQaGameplayMainScene(activeScene))
                     {
-                        RetryQaGameplay("menu player disappeared during settle", 0.35f, 10f);
+                        SetQaGameplayStage(6, "normal lifecycle reached gameplay; waiting for actors");
+                        _qaGameplayAt = now + 0.50f;
                         return;
                     }
 
-                    FinalizeQaNativeMenu();
-                    SetQaGameplayStage(6, "loading Meadow after native keyboard lifecycle");
-                    _qaGameplayAt = now + 0.50f;
+                    if (!string.Equals(activeScene, "menu_levels", StringComparison.OrdinalIgnoreCase))
+                    {
+                        RetryQaGameplay("waiting for normal level-selection scene; scene=" + activeScene,
+                            0.40f, 20f);
+                        return;
+                    }
+
+                    string acceptAction;
+                    if (!TryPressQaLifecycleButton(0, 180, out acceptAction,
+                        "menu_accept", "action", "start"))
+                    {
+                        RetryQaGameplay("level-selection accept input unavailable", 0.75f, 20f);
+                        return;
+                    }
+
+                    RetryQaGameplay("waiting for highlighted level after normal input '" + acceptAction + "'",
+                        0.90f, 20f);
                     return;
                 }
 
                 if (_qaGameplayStage == 6)
                 {
-                    Logger.LogInfo("QA H2.3: loading '" + MeadowScene + "' after native keyboard lifecycle.");
-                    SetQaGameplayStage(7, "waiting for real Meadow gameplay objects");
-                    SceneManager.LoadScene(MeadowScene, LoadSceneMode.Single);
-                    _qaGameplayAt = now + 1.0f;
-                    return;
-                }
-
-                if (_qaGameplayStage == 7)
-                {
-                    if (!string.Equals(SceneManager.GetActiveScene().name, MeadowScene, StringComparison.OrdinalIgnoreCase))
+                    if (!IsQaGameplayMainScene(activeScene))
                     {
-                        RetryQaGameplay("waiting for level_meadow_main", 0.35f, 25f);
+                        RetryQaGameplay("waiting for a real level_*_main gameplay scene; scene=" + activeScene,
+                            0.40f, 35f);
                         return;
                     }
 
                     RefreshQaObjects();
                     int playerCount = CountLiveComponents(_qaPlayers);
                     int botCount = CountLiveComponents(_qaBots);
-                    if (playerCount < 1)
+                    if (playerCount < 2)
                     {
-                        RetryQaGameplay("Meadow loaded; waiting for gameplay player(s), currently " + playerCount,
-                            0.35f, 25f);
+                        RetryQaGameplay("gameplay loaded through normal lifecycle; waiting for both selected players, currently " +
+                            playerCount, 0.40f, 30f);
                         return;
                     }
 
                     if (!_qaLifecycleProbeMeadowWritten)
                     {
                         _qaLifecycleProbeMeadowWritten = true;
-                        WriteQaLifecycleProbe("MEADOW READY after native keyboard lifecycle");
+                        WriteQaLifecycleProbe("GAMEPLAY READY THROUGH NORMAL LIFECYCLE");
                     }
 
                     _qaGameplayReady = true;
-                    _qaGameplayStage = 8;
-                    _qaGameplayMessage = "ready: Meadow players=" + playerCount + ", bots=" + botCount;
-                    Logger.LogInfo("QA H2.2 GAMEPLAY READY: Meadow live; players=" + playerCount + ", bots=" + botCount + ".");
+                    _qaGameplayStage = 7;
+                    _qaGameplayMessage = "ready: normal lifecycle scene=" + activeScene +
+                        ", players=" + playerCount + ", bots=" + botCount;
+                    Logger.LogInfo("QA H2.4 GAMEPLAY READY: normal lifecycle reached '" + activeScene +
+                        "'; players=" + playerCount + ", bots=" + botCount + ".");
                     return;
                 }
             }
@@ -1012,6 +1084,86 @@ namespace UnspottableExpanded
             {
                 FailQaGameplay("stage " + _qaGameplayStage + " exception: " + ex.GetType().Name + ": " + ex.Message);
             }
+        }
+
+        private bool TryPressQaLifecycleButton(int playerId, int ms, out string selectedAction, params string[] candidates)
+        {
+            selectedAction = string.Empty;
+            if (!_qaInputEnabled || !_qaInputPatched || !SafeRewiredReady())
+                return false;
+
+            Player player = null;
+            try
+            {
+                player = ReInput.players.GetPlayer(playerId);
+            }
+            catch { }
+            if (player == null)
+                return false;
+
+            int count = candidates == null ? 0 : candidates.Length;
+            if (count == 0)
+                return false;
+
+            int startIndex = _qaGameplayAttempts % count;
+            for (int offset = 0; offset < count; offset++)
+            {
+                string candidate = candidates[(startIndex + offset) % count];
+                if (!QaActionExists(candidate))
+                    continue;
+
+                PressQaButton(playerId, candidate, ms);
+                selectedAction = candidate;
+                Logger.LogInfo("QA H2.4 PLAYER INPUT: P" + (playerId + 1) + " pressed '" + candidate + "'.");
+                return true;
+            }
+            return false;
+        }
+
+        private bool QaActionExists(string actionName)
+        {
+            if (string.IsNullOrEmpty(actionName) || !SafeRewiredReady())
+                return false;
+            try
+            {
+                foreach (InputAction action in ReInput.mapping.Actions)
+                {
+                    if (action != null && string.Equals(action.name, actionName, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        private void DriveQaStartAreaSearch(int attempt)
+        {
+            float[,] directions = new float[,]
+            {
+                { 0f, 1f }, { 1f, 0f }, { 0f, -1f }, { -1f, 0f },
+                { 0.7f, 0.7f }, { 0.7f, -0.7f }, { -0.7f, -0.7f }, { -0.7f, 0.7f }
+            };
+            int index = Math.Abs(attempt) % directions.GetLength(0);
+            float x = directions[index, 0];
+            float y = directions[index, 1];
+
+            for (int playerId = 0; playerId < 2; playerId++)
+            {
+                if (QaActionExists("MoveX"))
+                    SetQaAxis(playerId, "MoveX", x, 650);
+                if (QaActionExists("MoveY"))
+                    SetQaAxis(playerId, "MoveY", y, 650);
+            }
+            Logger.LogInfo("QA H2.4 PLAYER INPUT: walking P1/P2 for native START search x=" +
+                x.ToString("0.0", CultureInfo.InvariantCulture) + ", y=" +
+                y.ToString("0.0", CultureInfo.InvariantCulture) + ".");
+        }
+
+        private static bool IsQaGameplayMainScene(string sceneName)
+        {
+            return !string.IsNullOrEmpty(sceneName) &&
+                sceneName.StartsWith("level_", StringComparison.OrdinalIgnoreCase) &&
+                sceneName.EndsWith("_main", StringComparison.OrdinalIgnoreCase);
         }
 
         private void SetQaGameplayStage(int stage, string message)
@@ -1038,172 +1190,6 @@ namespace UnspottableExpanded
             _qaGameplayReady = false;
             _qaGameplayMessage = message;
             Logger.LogError("QA H2 GAMEPLAY FAILED: " + message);
-        }
-
-        private bool TryPrepareQaNativePlayers(out string detail)
-        {
-            detail = "native keyboard manager not ready";
-            if (_gameAssembly == null)
-                _gameAssembly = FindAssembly("Assembly-CSharp");
-            if (_gameAssembly == null)
-                return false;
-
-            Type managerType = _gameAssembly.GetType("Rewired.Unspottable.ControlerManager", false);
-            if (managerType == null)
-            {
-                detail = "ControlerManager type not found";
-                return false;
-            }
-
-#pragma warning disable CS0618
-            UnityEngine.Object[] managers = UnityEngine.Object.FindObjectsOfType(managerType, true);
-#pragma warning restore CS0618
-            if (managers == null || managers.Length == 0 || managers[0] == null)
-            {
-                detail = "ControlerManager instance not found";
-                return false;
-            }
-
-            object manager = managers[0];
-            BindingFlags instanceFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            BindingFlags staticFlags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-
-            try
-            {
-                if (!_qaGameplayManagerInitialized)
-                {
-                    // The real Windows runner proved H2.2 reached stage 4 with zero menu
-                    // players: AssignKeyboardDebug by itself did not complete player creation.
-                    // Earlier native fast-boot work showed ControlerManager's own start
-                    // initialization/reset is required before its debug assignment helper.
-                    // Do this only AFTER the game's support scenes are already loaded, and
-                    // never load those scenes ourselves.
-                    MethodInfo initStartScene = managerType.GetMethod("InitStartScene", instanceFlags);
-                    MethodInfo resetAll = managerType.GetMethod("resetAllControler", staticFlags);
-                    if (initStartScene == null || resetAll == null)
-                    {
-                        detail = "native ControlerManager init/reset methods unavailable";
-                        return false;
-                    }
-
-                    initStartScene.Invoke(manager, null);
-                    resetAll.Invoke(null, null);
-
-                    FieldInfo online = managerType.GetField("online", instanceFlags);
-                    if (online != null)
-                        online.SetValue(manager, false);
-
-                    MethodInfo enableJoin = managerType.GetMethod("EnableJoinGame", instanceFlags);
-                    if (enableJoin != null)
-                        enableJoin.Invoke(manager, null);
-
-                    _qaGameplayManagerInitialized = true;
-                    Logger.LogInfo("QA H2.3: InitStartScene/resetAllControler invoked exactly once after native support scenes loaded.");
-                }
-
-                if (!ReInput.isReady || ReInput.players.playerCount < 1)
-                {
-                    detail = "Rewired player 0 unavailable";
-                    return false;
-                }
-
-                Player p1 = ReInput.players.GetPlayer(0);
-                if (p1 == null)
-                {
-                    detail = "Rewired Player1 unavailable";
-                    return false;
-                }
-
-                p1.isPlaying = true;
-
-                if (!_qaGameplayP1Loaded)
-                {
-                    // This is the same native helper that previously proved it performs
-                    // controller assignment + player loading as one operation.
-                    MethodInfo assignDebug = managerType.GetMethod("AssignKeyboardDebug", instanceFlags);
-                    if (assignDebug != null)
-                    {
-                        assignDebug.Invoke(manager, new object[] { ReInput.controllers.Keyboard });
-                        Logger.LogInfo("QA H2.3: AssignKeyboardDebug(Rewired.Keyboard) invoked exactly once.");
-                    }
-                    else
-                    {
-                        MethodInfo assignKeyboard = managerType.GetMethod("AssignKeyboardToPlayer", instanceFlags);
-                        if (assignKeyboard == null)
-                        {
-                            detail = "neither AssignKeyboardDebug nor AssignKeyboardToPlayer exists";
-                            return false;
-                        }
-                        assignKeyboard.Invoke(manager, new object[] { p1 });
-                        Logger.LogInfo("QA H2.3: AssignKeyboardToPlayer(Player1) fallback invoked exactly once.");
-                    }
-
-                    _qaGameplayP1Loaded = true;
-                }
-
-                bool keyboardAssigned = false;
-                FieldInfo keyboardField = managerType.GetField("isKeyboardAssigned", staticFlags);
-                if (keyboardField != null)
-                {
-                    object rawKeyboard = keyboardField.GetValue(null);
-                    if (rawKeyboard is bool)
-                        keyboardAssigned = (bool)rawKeyboard;
-                }
-
-                int nativeCounter = -1;
-                FieldInfo counter = managerType.GetField("rewiredPlayerIdCounter", staticFlags);
-                if (counter != null)
-                {
-                    object raw = counter.GetValue(null);
-                    if (raw is int)
-                        nativeCounter = (int)raw;
-                }
-
-                detail = "native keyboard player requested; isKeyboardAssigned=" + keyboardAssigned +
-                    "; nativeCounter=" + nativeCounter;
-                return _qaGameplayP1Loaded;
-            }
-            catch (TargetInvocationException tie)
-            {
-                Exception inner = tie.InnerException ?? tie;
-                detail = "native keyboard assignment not ready: " + inner.GetType().Name + ": " + inner.Message;
-                return false;
-            }
-            catch (Exception ex)
-            {
-                detail = "native keyboard assignment failed: " + ex.GetType().Name + ": " + ex.Message;
-                return false;
-            }
-        }
-
-        private void FinalizeQaNativeMenu()
-        {
-            try
-            {
-                if (_gameAssembly == null)
-                    return;
-                Type managerType = _gameAssembly.GetType("Rewired.Unspottable.ControlerManager", false);
-                if (managerType == null)
-                    return;
-
-#pragma warning disable CS0618
-                UnityEngine.Object[] managers = UnityEngine.Object.FindObjectsOfType(managerType, true);
-#pragma warning restore CS0618
-                if (managers == null || managers.Length == 0 || managers[0] == null)
-                    return;
-
-                MethodInfo disableJoin = managerType.GetMethod("DisableJoinGame",
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (disableJoin != null)
-                {
-                    disableJoin.Invoke(managers[0], null);
-                    Logger.LogInfo("QA H2.1: DisableJoinGame delayed until after native player FSM settle.");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning("QA H2.1 delayed DisableJoinGame failed: " + ex.Message);
-            }
         }
 
         private void WriteQaLifecycleProbe(string label)
@@ -1293,11 +1279,11 @@ namespace UnspottableExpanded
                 }
 
                 File.AppendAllText(_qaLifecycleProbePath, sb.ToString(), Encoding.UTF8);
-                Logger.LogInfo("QA H2.1: wrote targeted lifecycle probe '" + label + "'.");
+                Logger.LogInfo("QA H2.4: wrote targeted lifecycle probe '" + label + "'.");
             }
             catch (Exception ex)
             {
-                Logger.LogWarning("QA H2.1 lifecycle probe failed: " + ex.Message);
+                Logger.LogWarning("QA H2.4 lifecycle probe failed: " + ex.Message);
             }
         }
 
