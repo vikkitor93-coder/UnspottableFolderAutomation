@@ -4,8 +4,8 @@ This is the Unity/BepInEx Unspottable mod, not the separate browser game.
 
 Normal launches preserve the known-good safe lifecycle. QA instrumentation is dormant unless UE_QA_MODE=1.
 
-H2.4 removes the rejected bootstrap shortcuts. In QA gameplay mode it:
-- launches the game normally in Unity batch/nographics mode;
+H2.4 removes the rejected bootstrap shortcuts. The current diagnostic variant is rendered so the real menu/video flow can be observed. In QA gameplay mode it:
+- launches the game as a normal visible rendered window (no -batchmode / -nographics);
 - never performs a direct QA scene load;
 - never initializes/resets ControlerManager or uses debug controller assignment;
 - never spawns or repositions a player;
