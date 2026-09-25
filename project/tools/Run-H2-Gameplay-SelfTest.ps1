@@ -21,18 +21,18 @@ New-Item -ItemType Directory -Force -Path $stage|Out-Null
 Write-Host '============================================================' -ForegroundColor Cyan
 Write-Host ' UNSPOTTABLE QA H2 - DETERMINISTIC GAMEPLAY VERIFICATION' -ForegroundColor Cyan
 Write-Host '============================================================' -ForegroundColor Cyan
-Write-Host 'Normal lifecycle: no QA scene loads, player spawning, or manager initialization. Process-local Rewired input only.' -ForegroundColor Yellow
+Write-Host 'Rendered diagnostic: normal visible game window, normal lifecycle, process-local Rewired input only.' -ForegroundColor Yellow
 
 $old=@{m=$env:UE_QA_MODE;h=$env:UE_QA_HEADLESS;i=$env:UE_QA_INPUT;g=$env:UE_QA_GAMEPLAY;l=$env:UE_QA_LOW_IMPACT;f=$env:UE_QA_FPS}
 $p=$null;$state=$null;$adapterExit=4;$bootstrapStatus='FAIL';$bootstrapReason='not started'
 try{
     try{
-        $env:UE_QA_MODE='1';$env:UE_QA_HEADLESS='1';$env:UE_QA_INPUT='1';$env:UE_QA_GAMEPLAY='1';$env:UE_QA_LOW_IMPACT='1';$env:UE_QA_FPS="$Fps"
-        $p=Start-Process $Exe -ArgumentList "-batchmode -nographics -logFile `"$UnityLog`"" -WorkingDirectory $Game -PassThru
+        $env:UE_QA_MODE='1';$env:UE_QA_HEADLESS='0';$env:UE_QA_INPUT='1';$env:UE_QA_GAMEPLAY='1';$env:UE_QA_LOW_IMPACT='0';$env:UE_QA_FPS="$Fps"
+        $p=Start-Process $Exe -ArgumentList "-logFile `"$UnityLog`"" -WorkingDirectory $Game -PassThru
     }finally{
         $env:UE_QA_MODE=$old.m;$env:UE_QA_HEADLESS=$old.h;$env:UE_QA_INPUT=$old.i;$env:UE_QA_GAMEPLAY=$old.g;$env:UE_QA_LOW_IMPACT=$old.l;$env:UE_QA_FPS=$old.f
     }
-    try{Start-Sleep -Milliseconds 300;$p.PriorityClass='BelowNormal'}catch{}
+    Start-Sleep -Milliseconds 300
 
     $deadline=(Get-Date).AddSeconds($TimeoutSeconds);$last=-1
     while((Get-Date)-lt $deadline){
