@@ -64,6 +64,8 @@ ok('H2 no manager lifecycle mutation', all(x not in plugin for x in ['InitStartS
 ok('H2 requires two normal menu players', 'menuPlayers >= 2' in plugin and 'joining P2 through normal player input' in plugin)
 ok('H2 physical START uses movement input', 'DriveQaStartAreaSearch' in plugin and 'MoveX' in plugin and 'MoveY' in plugin)
 ok('H2 waits for real gameplay scene', 'IsQaGameplayMainScene' in plugin and 'playerCount < 2' in plugin)
+ok('H2 wrapper is rendered', "UE_QA_HEADLESS='0'" in h2 and '-batchmode' not in h2 and '-nographics' not in h2)
+ok('H2 rendered run is not low-impact throttled', "UE_QA_LOW_IMPACT='0'" in h2 and "PriorityClass='BelowNormal'" not in h2)
 ok('punch execution requires FSM', 'PlayerPunch FSM transitioned' in adapter and 'general getter activity does not count' in adapter)
 ok('impact rejects movement-only proof', 'displacement alone' in qav.lower() and 'intentionally insufficient' in adapter)
 ok('P2 unsupported is skip', 'P2 is not supported' in adapter and "'SKIP'" in adapter)
