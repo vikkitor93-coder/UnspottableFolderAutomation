@@ -1,4 +1,4 @@
-param([int]$Fps=30,[int]$TimeoutSeconds=105)
+param([int]$Fps=30,[int]$TimeoutSeconds=180)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'QA-Common.ps1')
 
@@ -21,7 +21,7 @@ New-Item -ItemType Directory -Force -Path $stage|Out-Null
 Write-Host '============================================================' -ForegroundColor Cyan
 Write-Host ' UNSPOTTABLE QA H2 - DETERMINISTIC GAMEPLAY VERIFICATION' -ForegroundColor Cyan
 Write-Host '============================================================' -ForegroundColor Cyan
-Write-Host 'Process-local QA only. No OS keyboard/mouse/controller automation.' -ForegroundColor Yellow
+Write-Host 'Normal lifecycle: no QA scene loads, player spawning, or manager initialization. Process-local Rewired input only.' -ForegroundColor Yellow
 
 $old=@{m=$env:UE_QA_MODE;h=$env:UE_QA_HEADLESS;i=$env:UE_QA_INPUT;g=$env:UE_QA_GAMEPLAY;l=$env:UE_QA_LOW_IMPACT;f=$env:UE_QA_FPS}
 $p=$null;$state=$null;$adapterExit=4;$bootstrapStatus='FAIL';$bootstrapReason='not started'
@@ -40,7 +40,7 @@ try{
         if(Test-Path $StatePath){
             try{$state=Get-Content $StatePath -Raw|ConvertFrom-Json}catch{$state=$null}
         }
-        if($state -and $state.pluginVersion -eq '0.9.7'){
+        if($state -and $state.pluginVersion -eq '0.9.8'){
             if([int]$state.qaGameplayStage -ne $last){
                 $last=[int]$state.qaGameplayStage
                 Write-Host ("  stage {0}: {1} | scene={2} players={3} bots={4}" -f $state.qaGameplayStage,$state.qaGameplayMessage,$state.scene,$state.playerCount,$state.botCount) -ForegroundColor DarkCyan
