@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "runner_version": "0.1.0",
+  "run_id": "8b126df2afb740be86f0fdf9abf73b46",
+  "revision": "efa25dc9064e6e7f9b5a39b127b946f534897338",
+  "started_utc": "2026-09-25T00:59:22Z",
+  "profile": "mod-qa",
+  "status": "failed",
+  "steps": [
+    {
+      "number": 1,
+      "status": "failed",
+      "exit_code": 1,
+      "duration_seconds": 0.26,
+      "compiler_codes": [],
+      "error": "command-failed"
+    }
+  ],
+  "error": "command-failed",
+  "qa": null
+}
