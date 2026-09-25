@@ -37,3 +37,12 @@
 - H2 now launches a normal visible rendered game window with only `-logFile`; `-batchmode` and `-nographics` are removed.
 - `UE_QA_HEADLESS=0`, low-impact throttling is disabled for this diagnostic, and BelowNormal process priority is no longer forced.
 - Lifecycle/player-input assertions are otherwise unchanged.
+
+
+# Focused change list — v0.9.9 H2.5
+
+- Confirmed a rendered v0.9.8 Windows run reaches the visible Local/Online menu in `menu_post_start_main`, then times out at H2 stage 0 with build PASS and zero players.
+- Added an explicit pre-player Local-menu step: H2 finds the visible Unity UI object that identifies itself as Local and submits that control through its normal UI submit/click path.
+- The helper refuses to classify a UI target as Local when its label/path also contains Online.
+- No direct scene load, player spawning, ControlerManager initialization, transform movement, or PlayMaker start event was added.
+- After Local is entered, the existing Rewired-based P1/P2 selection, native START traversal, level selection, gameplay-actor gate, deterministic assertions, and cleanup remain unchanged.
