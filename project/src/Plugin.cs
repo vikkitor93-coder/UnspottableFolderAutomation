@@ -21,7 +21,7 @@ namespace UnspottableExpanded
     {
         public const string PluginGuid = "com.viktordadi.unspottableexpanded";
         public const string PluginName = "Unspottable Expanded";
-        public const string PluginVersion = "0.9.9";
+        public const string PluginVersion = "0.9.10";
 
         private const string ArenaScene = "level_arena_main";
         private const string StartMenuScene = "menu_start_main";
@@ -74,6 +74,11 @@ namespace UnspottableExpanded
         private readonly Dictionary<int, Dictionary<string, QaInjectedAction>> _qaInjected =
             new Dictionary<int, Dictionary<string, QaInjectedAction>>();
         private readonly Dictionary<int, string> _qaActionNamesById = new Dictionary<int, string>();
+        private int _qaKeyboardPatchCount;
+        private long _qaKeyboardInterceptCount;
+        private bool _qaSpaceOverride;
+        private float _qaSpaceHeldUntil;
+        private float _qaSpaceDownUntil;
 
         // H2: QA-only gameplay lifecycle driver. Never active in a normal launch.
         private bool _qaGameplayEnabled;
@@ -126,9 +131,9 @@ namespace UnspottableExpanded
         private void Awake()
         {
             Logger.LogInfo("========================================");
-            Logger.LogInfo("Unspottable Expanded v0.9.9 H2.5 LOCAL MENU SUBMIT loaded");
+            Logger.LogInfo("Unspottable Expanded v0.9.10 H2.6 KEYBOARD SPACE loaded");
             Logger.LogInfo("SAFE CORE: normal vanilla menus/player selection/start flow preserved. No quick boot, solo start, Rewired manipulation, or movement overrides.");
-            Logger.LogInfo("QA FOUNDATION: dormant during normal launches. UE_QA_GAMEPLAY=1 preserves the real boot/menu/gameplay lifecycle; the pre-Local UI is submitted through Unity UI, then gameplay uses process-local player-like Rewired input.");
+            Logger.LogInfo("QA FOUNDATION: dormant during normal launches. UE_QA_GAMEPLAY=1 preserves the real boot/menu/gameplay lifecycle; pre-game keyboard input is injected at Rewired.Keyboard Space, then gameplay uses process-local Rewired input.");
             Logger.LogInfo("WHITE SQUARE LOGICAL BOUNDS enabled only when Arena is loaded.");
             Logger.LogInfo("Arena visuals are replaced and known Arena obstacle/interaction colliders are disabled after spawn.");
             Logger.LogInfo("Character positions are constrained to White Square's +/-7.55 playable bounds because Unspottable movement bypasses ordinary wall colliders.");
@@ -560,7 +565,7 @@ namespace UnspottableExpanded
                         File.Delete(_qaLifecycleProbePath);
                 }
                 catch { }
-                Logger.LogInfo("QA H2 GAMEPLAY HARNESS: ENABLED. H2 observes the real lifecycle and supplies only player-like Rewired input; no scene loads, player spawning, or manager initialization.");
+                Logger.LogInfo("QA H2 GAMEPLAY HARNESS: ENABLED. H2 observes the real lifecycle; official keyboard Space is injected at Rewired.Keyboard for pre-game/P1 flow, with no scene loads, player spawning, or manager initialization.");
             }
 
             StartQaBridge();
@@ -654,6 +659,8 @@ namespace UnspottableExpanded
             AppendJsonBool(sb, "qaInputPatched", _qaInputPatched); sb.Append(',');
             AppendJsonNumber(sb, "qaInputPatchCount", _qaInputPatchCount); sb.Append(',');
             AppendJsonLong(sb, "qaInputInterceptCount", _qaInputInterceptCount); sb.Append(',');
+            AppendJsonNumber(sb, "qaKeyboardPatchCount", _qaKeyboardPatchCount); sb.Append(',');
+            AppendJsonLong(sb, "qaKeyboardInterceptCount", _qaKeyboardInterceptCount); sb.Append(',');
             AppendJsonNumber(sb, "qaActiveInputs", CountQaActiveInputs()); sb.Append(',');
             AppendJsonBool(sb, "qaGameplayEnabled", _qaGameplayEnabled); sb.Append(',');
             AppendJsonNumber(sb, "qaGameplayStage", _qaGameplayStage); sb.Append(',');
@@ -872,7 +879,7 @@ namespace UnspottableExpanded
             {
                 string activeScene = SceneManager.GetActiveScene().name ?? string.Empty;
 
-                // H2.4 deliberately never performs a direct scene load and never invokes
+                // H2.6 deliberately never performs a direct scene load and never invokes
                 // ControlerManager initialization/assignment helpers. The game owns every
                 // lifecycle transition. QA only returns synthetic values from the same
                 // Rewired getters normal local-player input uses.
@@ -887,20 +894,14 @@ namespace UnspottableExpanded
 
                     if (string.Equals(activeScene, PostStartMenuScene, StringComparison.OrdinalIgnoreCase))
                     {
-                        string selectedUi;
-                        if (TrySubmitQaLocalMenuUi(out selectedUi))
+                        if (PressQaKeyboardSpace(320))
                         {
-                            RetryQaGameplay("submitted Local through Unity's selected menu UI" +
-                                (string.IsNullOrEmpty(selectedUi) ? string.Empty : "; selected=" + selectedUi),
+                            RetryQaGameplay("pressed official keyboard Space through Rewired.Keyboard at Local/Online menu",
                                 0.90f, 60f);
                             return;
                         }
 
-                        string localAction;
-                        TryPressQaLifecycleButton(0, 160, out localAction,
-                            "menu_accept", "action", "JoinGame", "punch", "start");
-                        RetryQaGameplay("waiting at Local/Online menu; Unity UI submit unavailable" +
-                            (string.IsNullOrEmpty(localAction) ? string.Empty : "; playerInput=" + localAction),
+                        RetryQaGameplay("waiting at Local/Online menu; Rewired.Keyboard Space injection unavailable",
                             0.85f, 60f);
                         return;
                     }
@@ -938,7 +939,7 @@ namespace UnspottableExpanded
                         return;
                     }
 
-                    Logger.LogInfo("QA H2.5: normal menu/support lifecycle ready. No support scene was loaded by QA.");
+                    Logger.LogInfo("QA H2.6: normal menu/support lifecycle ready. No support scene was loaded by QA.");
                     SetQaGameplayStage(2, "joining P1 through normal player input");
                     _qaGameplayAt = now + 0.25f;
                     return;
@@ -950,22 +951,20 @@ namespace UnspottableExpanded
                     int menuPlayers = CountLiveComponents(_qaPlayers);
                     if (menuPlayers >= 1)
                     {
-                        Logger.LogInfo("QA H2.5: P1 appeared through normal player-selection flow.");
+                        Logger.LogInfo("QA H2.6: P1 appeared through normal player-selection flow.");
                         SetQaGameplayStage(3, "joining P2 through normal player input");
                         _qaGameplayAt = now + 0.50f;
                         return;
                     }
 
-                    string joinAction;
-                    if (!TryPressQaLifecycleButton(0, 180, out joinAction,
-                        "JoinGame", "action", "menu_accept", "start"))
+                    if (!PressQaKeyboardSpace(320))
                     {
-                        RetryQaGameplay("P1 join input unavailable; mapped Rewired join/menu action not found",
+                        RetryQaGameplay("P1 keyboard join unavailable; Rewired.Keyboard Space injection not installed",
                             0.75f, 20f);
                         return;
                     }
 
-                    RetryQaGameplay("waiting for P1 after normal input '" + joinAction + "'", 0.75f, 20f);
+                    RetryQaGameplay("waiting for P1 after official keyboard Space", 0.75f, 20f);
                     return;
                 }
 
@@ -981,7 +980,7 @@ namespace UnspottableExpanded
                             WriteQaLifecycleProbe("NORMAL TWO-PLAYER SELECTION COMPLETE");
                         }
 
-                        Logger.LogInfo("QA H2.5: P2 appeared through normal player-selection flow; players=" + menuPlayers + ".");
+                        Logger.LogInfo("QA H2.6: P2 appeared through normal player-selection flow; players=" + menuPlayers + ".");
                         SetQaGameplayStage(4, "using player movement/input to enter the native START flow");
                         _qaGameplayAt = now + 0.65f;
                         return;
@@ -1004,7 +1003,7 @@ namespace UnspottableExpanded
                 {
                     if (string.Equals(activeScene, "menu_levels", StringComparison.OrdinalIgnoreCase))
                     {
-                        Logger.LogInfo("QA H2.5: native START flow advanced to menu_levels without a QA scene load.");
+                        Logger.LogInfo("QA H2.6: native START flow advanced to menu_levels without a QA scene load.");
                         SetQaGameplayStage(5, "selecting the highlighted level through normal menu input");
                         _qaGameplayAt = now + 0.75f;
                         return;
@@ -1096,7 +1095,7 @@ namespace UnspottableExpanded
                     _qaGameplayStage = 7;
                     _qaGameplayMessage = "ready: normal lifecycle scene=" + activeScene +
                         ", players=" + playerCount + ", bots=" + botCount;
-                    Logger.LogInfo("QA H2.5 GAMEPLAY READY: normal lifecycle reached '" + activeScene +
+                    Logger.LogInfo("QA H2.6 GAMEPLAY READY: normal lifecycle reached '" + activeScene +
                         "'; players=" + playerCount + ", bots=" + botCount + ".");
                     return;
                 }
@@ -1138,13 +1137,13 @@ namespace UnspottableExpanded
                 if (!InvokeQaUiSubmit(target, eventSystem))
                     return false;
 
-                Logger.LogInfo("QA H2.5 UI INPUT: submitted Local through Unity menu object '" +
+                Logger.LogInfo("QA H2.6 UI INPUT: submitted Local through Unity menu object '" +
                     selectedName + "'.");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.LogWarning("QA H2.5 Local UI submit failed: " + ex.GetType().Name + ": " + ex.Message);
+                Logger.LogWarning("QA H2.6 Local UI submit failed: " + ex.GetType().Name + ": " + ex.Message);
                 return false;
             }
         }
@@ -1294,7 +1293,7 @@ namespace UnspottableExpanded
 
                 PressQaButton(playerId, candidate, ms);
                 selectedAction = candidate;
-                Logger.LogInfo("QA H2.5 PLAYER INPUT: P" + (playerId + 1) + " pressed '" + candidate + "'.");
+                Logger.LogInfo("QA H2.6 PLAYER INPUT: P" + (playerId + 1) + " pressed '" + candidate + "'.");
                 return true;
             }
             return false;
@@ -1334,7 +1333,7 @@ namespace UnspottableExpanded
                 if (QaActionExists("MoveY"))
                     SetQaAxis(playerId, "MoveY", y, 650);
             }
-            Logger.LogInfo("QA H2.5 PLAYER INPUT: walking P1/P2 for native START search x=" +
+            Logger.LogInfo("QA H2.6 PLAYER INPUT: walking P1/P2 for native START search x=" +
                 x.ToString("0.0", CultureInfo.InvariantCulture) + ", y=" +
                 y.ToString("0.0", CultureInfo.InvariantCulture) + ".");
         }
@@ -1459,11 +1458,11 @@ namespace UnspottableExpanded
                 }
 
                 File.AppendAllText(_qaLifecycleProbePath, sb.ToString(), Encoding.UTF8);
-                Logger.LogInfo("QA H2.5: wrote targeted lifecycle probe '" + label + "'.");
+                Logger.LogInfo("QA H2.6: wrote targeted lifecycle probe '" + label + "'.");
             }
             catch (Exception ex)
             {
-                Logger.LogWarning("QA H2.5 lifecycle probe failed: " + ex.Message);
+                Logger.LogWarning("QA H2.6 lifecycle probe failed: " + ex.Message);
             }
         }
 
@@ -1601,10 +1600,27 @@ namespace UnspottableExpanded
                 count += PatchQaPostfix(harmonyType, harmonyMethodType, "GetButtonUp", typeof(string), nameof(QaGetButtonUpStringPostfix));
                 count += PatchQaPostfix(harmonyType, harmonyMethodType, "GetButtonUp", typeof(int), nameof(QaGetButtonUpIntPostfix));
 
-                _qaInputPatchCount = count;
+                int keyboardCount = 0;
+                keyboardCount += PatchQaKeyboardPostfix(harmonyType, harmonyMethodType, "GetKey",
+                    typeof(KeyboardKeyCode), nameof(QaKeyboardGetKeyPostfix));
+                keyboardCount += PatchQaKeyboardPostfix(harmonyType, harmonyMethodType, "GetKeyDown",
+                    typeof(KeyboardKeyCode), nameof(QaKeyboardGetKeyDownPostfix));
+                keyboardCount += PatchQaKeyboardPostfix(harmonyType, harmonyMethodType, "GetKeyUp",
+                    typeof(KeyboardKeyCode), nameof(QaKeyboardGetKeyUpPostfix));
+                keyboardCount += PatchQaKeyboardPostfix(harmonyType, harmonyMethodType, "GetKey",
+                    typeof(KeyCode), nameof(QaKeyboardGetKeyUnityPostfix));
+                keyboardCount += PatchQaKeyboardPostfix(harmonyType, harmonyMethodType, "GetKeyDown",
+                    typeof(KeyCode), nameof(QaKeyboardGetKeyDownUnityPostfix));
+                keyboardCount += PatchQaKeyboardPostfix(harmonyType, harmonyMethodType, "GetKeyUp",
+                    typeof(KeyCode), nameof(QaKeyboardGetKeyUpUnityPostfix));
+                _qaKeyboardPatchCount = keyboardCount;
+
+                _qaInputPatchCount = count + keyboardCount;
                 _qaInputPatched = count >= 6;
                 if (!_qaInputPatched)
-                    Logger.LogWarning("QA INPUT installed only " + count + " Rewired getter patches; expected at least 6.");
+                    Logger.LogWarning("QA INPUT installed only " + count + " Rewired.Player getter patches; expected at least 6.");
+                if (_qaKeyboardPatchCount < 2)
+                    Logger.LogWarning("QA KEYBOARD installed only " + _qaKeyboardPatchCount + " Rewired.Keyboard Space-capable getter patches.");
             }
             catch (Exception ex)
             {
@@ -1664,6 +1680,56 @@ namespace UnspottableExpanded
             }
             patch.Invoke(_qaHarmony, args);
             Logger.LogInfo("QA INPUT patched Rewired.Player." + methodName + "(" + argType.Name + ").");
+            return 1;
+        }
+
+        private int PatchQaKeyboardPostfix(Type harmonyType, Type harmonyMethodType,
+            string methodName, Type argType, string postfixName)
+        {
+            MethodInfo original = typeof(Keyboard).GetMethod(methodName,
+                BindingFlags.Instance | BindingFlags.Public, null, new Type[] { argType }, null);
+            MethodInfo postfix = typeof(Plugin).GetMethod(postfixName,
+                BindingFlags.Static | BindingFlags.NonPublic);
+            if (original == null || postfix == null)
+                return 0;
+
+            object harmonyMethod = null;
+            ConstructorInfo ctor = harmonyMethodType.GetConstructor(new Type[] { typeof(MethodInfo) });
+            if (ctor != null)
+                harmonyMethod = ctor.Invoke(new object[] { postfix });
+            else
+            {
+                harmonyMethod = Activator.CreateInstance(harmonyMethodType);
+                FieldInfo methodField = harmonyMethodType.GetField("method",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (methodField == null)
+                    throw new MissingFieldException("HarmonyMethod.method");
+                methodField.SetValue(harmonyMethod, postfix);
+            }
+
+            MethodInfo patch = null;
+            foreach (MethodInfo candidate in harmonyType.GetMethods(BindingFlags.Instance | BindingFlags.Public))
+            {
+                if (!string.Equals(candidate.Name, "Patch", StringComparison.Ordinal))
+                    continue;
+                ParameterInfo[] ps = candidate.GetParameters();
+                if (ps.Length < 2 || !typeof(MethodBase).IsAssignableFrom(ps[0].ParameterType))
+                    continue;
+                patch = candidate;
+                break;
+            }
+            if (patch == null)
+                throw new MissingMethodException("Harmony.Patch");
+
+            ParameterInfo[] parms = patch.GetParameters();
+            object[] args = new object[parms.Length];
+            args[0] = original;
+            for (int i = 1; i < parms.Length; i++)
+                args[i] = string.Equals(parms[i].Name, "postfix", StringComparison.OrdinalIgnoreCase)
+                    ? harmonyMethod : null;
+
+            patch.Invoke(_qaHarmony, args);
+            Logger.LogInfo("QA INPUT patched Rewired.Keyboard." + methodName + "(" + argType.Name + ").");
             return 1;
         }
 
@@ -1827,6 +1893,78 @@ namespace UnspottableExpanded
             }
         }
 
+        private static void QaKeyboardGetKeyPostfix(Keyboard __instance, KeyboardKeyCode __0, ref bool __result)
+        {
+            Plugin p = _instance;
+            if (p == null) return;
+            bool value;
+            if (p.TryGetQaKeyboardSpace(__0 == KeyboardKeyCode.Space, QaButtonQuery.Held, out value))
+            {
+                __result = value;
+                Interlocked.Increment(ref p._qaKeyboardInterceptCount);
+            }
+        }
+
+        private static void QaKeyboardGetKeyDownPostfix(Keyboard __instance, KeyboardKeyCode __0, ref bool __result)
+        {
+            Plugin p = _instance;
+            if (p == null) return;
+            bool value;
+            if (p.TryGetQaKeyboardSpace(__0 == KeyboardKeyCode.Space, QaButtonQuery.Down, out value))
+            {
+                __result = value;
+                Interlocked.Increment(ref p._qaKeyboardInterceptCount);
+            }
+        }
+
+        private static void QaKeyboardGetKeyUpPostfix(Keyboard __instance, KeyboardKeyCode __0, ref bool __result)
+        {
+            Plugin p = _instance;
+            if (p == null) return;
+            bool value;
+            if (p.TryGetQaKeyboardSpace(__0 == KeyboardKeyCode.Space, QaButtonQuery.Up, out value))
+            {
+                __result = value;
+                Interlocked.Increment(ref p._qaKeyboardInterceptCount);
+            }
+        }
+
+        private static void QaKeyboardGetKeyUnityPostfix(Keyboard __instance, KeyCode __0, ref bool __result)
+        {
+            Plugin p = _instance;
+            if (p == null) return;
+            bool value;
+            if (p.TryGetQaKeyboardSpace(__0 == KeyCode.Space, QaButtonQuery.Held, out value))
+            {
+                __result = value;
+                Interlocked.Increment(ref p._qaKeyboardInterceptCount);
+            }
+        }
+
+        private static void QaKeyboardGetKeyDownUnityPostfix(Keyboard __instance, KeyCode __0, ref bool __result)
+        {
+            Plugin p = _instance;
+            if (p == null) return;
+            bool value;
+            if (p.TryGetQaKeyboardSpace(__0 == KeyCode.Space, QaButtonQuery.Down, out value))
+            {
+                __result = value;
+                Interlocked.Increment(ref p._qaKeyboardInterceptCount);
+            }
+        }
+
+        private static void QaKeyboardGetKeyUpUnityPostfix(Keyboard __instance, KeyCode __0, ref bool __result)
+        {
+            Plugin p = _instance;
+            if (p == null) return;
+            bool value;
+            if (p.TryGetQaKeyboardSpace(__0 == KeyCode.Space, QaButtonQuery.Up, out value))
+            {
+                __result = value;
+                Interlocked.Increment(ref p._qaKeyboardInterceptCount);
+            }
+        }
+
         private enum QaButtonQuery
         {
             Held,
@@ -1929,6 +2067,8 @@ namespace UnspottableExpanded
         {
             lock (_qaInputLock)
             {
+                if (_qaSpaceOverride && now >= _qaSpaceHeldUntil)
+                    _qaSpaceOverride = false;
                 List<int> emptyPlayers = null;
                 foreach (KeyValuePair<int, Dictionary<string, QaInjectedAction>> playerPair in _qaInjected)
                 {
@@ -2105,6 +2245,44 @@ namespace UnspottableExpanded
             }
 
             return "{\"ok\":false,\"error\":\"unknown input op\"}";
+        }
+
+        private bool PressQaKeyboardSpace(int ms)
+        {
+            if (!_qaInputEnabled || _qaKeyboardPatchCount < 2 || !SafeRewiredReady())
+                return false;
+
+            float now = Time.unscaledTime;
+            lock (_qaInputLock)
+            {
+                _qaSpaceOverride = true;
+                _qaSpaceHeldUntil = now + (ms / 1000f);
+                _qaSpaceDownUntil = now + Math.Min(0.20f, ms / 1000f);
+            }
+            Logger.LogInfo("QA H2.6 KEYBOARD INPUT: Rewired Keyboard Space pressed.");
+            return true;
+        }
+
+        private bool TryGetQaKeyboardSpace(bool isSpace, QaButtonQuery query, out bool value)
+        {
+            value = false;
+            if (!_qaInputEnabled || !_qaSpaceOverride || !isSpace)
+                return false;
+
+            float now = Time.unscaledTime;
+            lock (_qaInputLock)
+            {
+                if (!_qaSpaceOverride)
+                    return false;
+
+                if (query == QaButtonQuery.Held)
+                    value = now < _qaSpaceHeldUntil;
+                else if (query == QaButtonQuery.Down)
+                    value = now <= _qaSpaceDownUntil;
+                else
+                    value = false;
+                return true;
+            }
         }
 
         private void SetQaAxis(int playerId, string action, float value, int ms)
