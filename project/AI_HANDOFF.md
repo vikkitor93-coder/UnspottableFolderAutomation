@@ -14,7 +14,7 @@ Earlier H1 evidence did prove the process-local Rewired Player getter injection 
 
 ## v0.9.10 H2.6 architecture
 
-H2.6 tests the official keyboard path instead of assuming Rewired Player 0 is the keyboard player. Pre-game selection and P1 join call `PressQaKeyboardSpace`, which injects Space at `Rewired.Keyboard.GetKey/GetKeyDown/GetKeyUp` through QA-only Harmony postfixes. Both `KeyboardKeyCode.Space` and Unity `KeyCode.Space` overloads are patched when present. This lets Rewired's own keyboard assignment and maps decide whether the System Player or a game Player receives the key.
+H2.6 tests the official keyboard path instead of assuming Rewired Player 0 is the keyboard player. Pre-game selection and P1 join call `PressQaOfficialKeyboardSpace`. It enumerates the System Player plus normal Players with `controllers.hasKeyboard`, scans enabled Keyboard Maps for `ActionElementMap.keyboardKeyCode == Space`, and injects each mapped Action into the owning Player. It also injects Space at `Rewired.Keyboard.GetKey/GetKeyDown/GetKeyUp` through QA-only Harmony postfixes as a fallback for direct keyboard-controller reads. Both `KeyboardKeyCode.Space` and Unity `KeyCode.Space` overloads are patched when present.
 
 The direct Unity UI-submit fallback has been removed. H2.6 still performs no direct scene load, ControlerManager initialization/reset, debug controller assignment, player spawn/reposition, Rewired `isPlaying` mutation, or PlayMaker start event.
 
