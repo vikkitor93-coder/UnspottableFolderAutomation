@@ -46,3 +46,13 @@
 - The helper refuses to classify a UI target as Local when its label/path also contains Online.
 - No direct scene load, player spawning, ControlerManager initialization, transform movement, or PlayMaker start event was added.
 - After Local is entered, the existing Rewired-based P1/P2 selection, native START traversal, level selection, gameplay-actor gate, deterministic assertions, and cleanup remain unchanged.
+
+
+# Focused change list — v0.9.10 H2.6
+
+- Confirmed the revision-isolated v0.9.9 rendered run still timed out at stage 0 in `menu_post_start_main`; direct Unity UI submission did not prove a valid Local-menu input path.
+- Removed the direct Unity UI-submit fallback from H2.
+- Stopped treating Rewired Player 0 as the keyboard player before P1 exists.
+- Added QA-only Harmony postfixes for `Rewired.Keyboard.GetKey/GetKeyDown/GetKeyUp` using both `KeyboardKeyCode` and Unity `KeyCode` overloads when present.
+- Pre-game selection and P1 join now emulate the official Space control at the shared Rewired keyboard-controller layer, allowing the game's actual keyboard ownership/maps (including possible System Player UI ownership) to decide who receives it.
+- Kept direct scene loads, ControlerManager lifecycle mutation, debug assignment, player manufacturing/repositioning, and PlayMaker start events prohibited.
