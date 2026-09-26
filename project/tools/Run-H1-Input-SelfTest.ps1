@@ -80,14 +80,14 @@ $state=$null
 while((Get-Date) -lt $deadline){
     if($p.HasExited){ throw "Unspottable exited before H1 became ready. See $UnityLog" }
     $state=Read-State
-    if($state -and $state.pluginVersion -eq '0.9.9' -and $state.heartbeat -gt 0 -and $state.rewiredReady){
+    if($state -and $state.pluginVersion -eq '0.9.10' -and $state.heartbeat -gt 0 -and $state.rewiredReady){
         break
     }
     Start-Sleep -Milliseconds 400
 }
-if(-not $state -or $state.pluginVersion -ne '0.9.9'){
+if(-not $state -or $state.pluginVersion -ne '0.9.10'){
     try{Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue}catch{}
-    throw "v0.9.9 telemetry did not become ready within $TimeoutSeconds seconds."
+    throw "v0.9.10 telemetry did not become ready within $TimeoutSeconds seconds."
 }
 
 Write-Host ("Telemetry ready. Scene={0}, heartbeat={1}" -f $state.scene,$state.heartbeat) -ForegroundColor Green
