@@ -57,7 +57,7 @@ while ((Get-Date) -lt $deadline) {
     if (Test-Path $StatePath) {
         try {
             $candidate = Get-Content -LiteralPath $StatePath -Raw | ConvertFrom-Json
-            if ($candidate.pluginVersion -eq '0.9.9' -and $candidate.heartbeat -gt 0) {
+            if ($candidate.pluginVersion -eq '0.9.10' -and $candidate.heartbeat -gt 0) {
                 $state = $candidate
                 break
             }
