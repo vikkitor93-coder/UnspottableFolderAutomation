@@ -1,7 +1,7 @@
 {
   "schemaVersion": "ue.qa.validation-summary.v1",
   "status": "PASS",
-  "note": "Static/source-policy, assertion-policy simulation, and PowerShell lexical validation PASS for v0.9.9 H2.5 rendered Local-menu diagnostic. Real Unity/game execution requires the Windows manual run.",
+  "note": "Static/source-policy, assertion-policy simulation, and PowerShell lexical validation PASS for v0.9.10 H2.6 rendered Rewired.Keyboard Space diagnostic. Real Unity/game execution requires the Windows manual run.",
   "results": [
     {
       "file": "static-validation.json",
