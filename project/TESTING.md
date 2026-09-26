@@ -6,7 +6,7 @@ H1 remains an input-layer self-test. H2 is the full normal-lifecycle determinist
 
 H2 launches the real game as a normal visible rendered process, with no `-batchmode` and no `-nographics`. The mod must not load a scene directly, create/reposition a player, initialize/reset ControlerManager, assign controllers through debug helpers, or fire start FSM events.
 
-The rendered v0.9.9 run still stopped at `menu_post_start_main` (Local/Online), proving the direct Unity-UI submit experiment did not advance the real menu. H2.6 therefore removes that fallback and stops assuming logical Rewired Player 0 is the keyboard player. Pre-game selection and P1 join press Space at the shared `Rewired.Keyboard` controller layer. Rewired then applies the game's actual keyboard ownership and keyboard maps, including the System Player if the UI is configured to use it.
+The rendered v0.9.9 run still stopped at `menu_post_start_main` (Local/Online), proving the direct Unity-UI submit experiment did not advance the real menu. H2.6 therefore removes that fallback and stops assuming logical Rewired Player 0 is the keyboard player. Pre-game selection and P1 join enumerate the System Player plus game Players that actually have `controllers.hasKeyboard`, inspect their enabled Keyboard Maps for mappings whose key is Space, and inject the mapped Action back into that same Player. A direct `Rewired.Keyboard` Space hook remains as a fallback for code that reads the keyboard controller directly.
 
 Expected stages are: normal boot → keyboard Space → Local flow → native support scenes → keyboard P1 join → P2 join → native START traversal → normal level selection → real gameplay actors → deterministic adapter. A failure at any stage is evidence; do not bypass it.
 
