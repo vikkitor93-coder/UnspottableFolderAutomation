@@ -23,7 +23,7 @@
       "detail": "bad=None, remaining=[]"
     },
     {
-      "name": "version 0.9.9",
+      "name": "version 0.9.10",
       "pass": true,
       "detail": ""
     },
@@ -58,12 +58,17 @@
       "detail": ""
     },
     {
-      "name": "H2 handles Local UI before player selection",
+      "name": "H2 uses official keyboard Space before player selection",
       "pass": true,
       "detail": ""
     },
     {
-      "name": "H2 Local UI does not target Online",
+      "name": "H2 patches Rewired keyboard controller",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "name": "H2 no direct Unity UI submit fallback",
       "pass": true,
       "detail": ""
     },
