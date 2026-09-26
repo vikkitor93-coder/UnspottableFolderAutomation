@@ -1,4 +1,4 @@
-# UnspottableExpanded mod source — v0.9.9 H2.5
+# UnspottableExpanded mod source — v0.9.10 H2.6
 
 This is the Unity/BepInEx mod for the commercial PC game Unspottable, not the separate browser social-stealth project.
 
@@ -6,6 +6,6 @@ Read `AI_HANDOFF.md`, `MILESTONES.md`, `TESTING.md`, and `QA_ADAPTER.md` before 
 
 The folder-automation helper builds this source against the locally installed game/BepInEx assemblies using `UE_GAME_DIR`, temporarily deploys the test DLL, invokes the H2 wrapper, and restores the previous DLL. `UE_FOLDER_QA_OUTPUT` selects the runner-owned evidence directory.
 
-H2.5 uses a visible rendered game process. It preserves the game's normal scene lifecycle. At the pre-player Local/Online menu it locates the visible Local Unity UI control and submits that UI choice; after Local is entered, player selection and gameplay are driven through process-local Rewired input. It does not directly load gameplay scenes, spawn/reposition players, initialize/reset ControlerManager, or fire PlayMaker start events.
+H2.6 uses a visible rendered game process and preserves the game's normal scene lifecycle. Instead of assuming Rewired Player 0 is the keyboard player, pre-game selection and P1 join now emulate the official keyboard Space control at the shared `Rewired.Keyboard` controller layer. Rewired's own keyboard assignment/maps therefore decide whether the System Player or a game Player receives that key. After P1 exists, the existing normal lifecycle continues.
 
-No proprietary game/BepInEx DLLs, game install, or SDK is included. Do not run the browser-extension QA runner and the folder-automation runner against the same game process at the same time.
+It does not directly load gameplay scenes, spawn/reposition players, initialize/reset ControlerManager, or fire PlayMaker start events. No proprietary game/BepInEx DLLs, game install, or SDK is included.
