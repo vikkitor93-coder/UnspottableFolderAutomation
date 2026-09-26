@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "runner_version": "0.1.0",
+  "run_id": "2210d045c70e4b08affce4b1904b4521",
+  "revision": "c8a57a895363b38305ade6e0499f54b9c5531629",
+  "started_utc": "2026-09-26T19:55:30Z",
+  "profile": "mod-qa",
+  "status": "failed",
+  "steps": [
+    {
+      "number": 1,
+      "status": "failed",
+      "exit_code": 2,
+      "duration_seconds": 91.15,
+      "compiler_codes": [],
+      "error": "command-failed"
+    }
+  ],
+  "error": "command-failed",
+  "qa": {
+    "build": "PASS",
+    "bootstrap": "FAIL",
+    "bootstrap_stage": 2,
+    "bootstrap_reason": "support-scenes-timeout",
+    "bootstrap_scene": "menu_start_main",
+    "bootstrap_players": 0,
+    "bootstrap_bots": 0,
+    "gameplay": "NOT_RUN",
+    "assertions": [],
+    "error": "bootstrap-failed",
+    "restored": true
+  }
+}
