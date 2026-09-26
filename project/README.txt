@@ -9,8 +9,8 @@ H2.6 removes the rejected bootstrap shortcuts. The current diagnostic variant is
 - never performs a direct QA scene load;
 - never initializes/resets ControlerManager or uses debug controller assignment;
 - never spawns or repositions a player;
-- drives pre-game/menu selection and P1 join with official keyboard Space at the Rewired.Keyboard controller layer;
-- lets Rewired's own keyboard ownership/maps decide which Player/System Player receives it;
+- drives pre-game/menu selection and P1 join by finding the actual Rewired keyboard owners and their enabled Space mappings;
+- injects those mapped Actions into the owning Player/System Player, with a direct Rewired.Keyboard Space fallback;
 - waits for the game's own menu/support scenes;
 - joins P1 and P2 with process-local synthetic Rewired button values;
 - reaches the native START flow with ordinary MoveX/MoveY player input;
