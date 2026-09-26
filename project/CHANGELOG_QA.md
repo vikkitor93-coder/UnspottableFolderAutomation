@@ -53,6 +53,7 @@
 - Confirmed the revision-isolated v0.9.9 rendered run still timed out at stage 0 in `menu_post_start_main`; direct Unity UI submission did not prove a valid Local-menu input path.
 - Removed the direct Unity UI-submit fallback from H2.
 - Stopped treating Rewired Player 0 as the keyboard player before P1 exists.
-- Added QA-only Harmony postfixes for `Rewired.Keyboard.GetKey/GetKeyDown/GetKeyUp` using both `KeyboardKeyCode` and Unity `KeyCode` overloads when present.
-- Pre-game selection and P1 join now emulate the official Space control at the shared Rewired keyboard-controller layer, allowing the game's actual keyboard ownership/maps (including possible System Player UI ownership) to decide who receives it.
+- Added keyboard-owner/map discovery: H2 enumerates the System Player and normal Players with `controllers.hasKeyboard`, scans enabled Keyboard Maps for Space bindings, and injects those exact mapped Actions into the owning Player.
+- Added QA-only Harmony postfixes for `Rewired.Keyboard.GetKey/GetKeyDown/GetKeyUp` using both `KeyboardKeyCode` and Unity `KeyCode` overloads when present as a direct-keyboard fallback.
+- Pre-game selection and P1 join therefore follow the game's real keyboard ownership/maps instead of assuming Player 0.
 - Kept direct scene loads, ControlerManager lifecycle mutation, debug assignment, player manufacturing/repositioning, and PlayMaker start events prohibited.
