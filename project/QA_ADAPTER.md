@@ -1,4 +1,4 @@
-# UnspottableExpanded QA adapter — v0.9.9
+# UnspottableExpanded QA adapter — v0.9.10
 
 This adapter is the boundary between the Windows runner and the mod's opt-in QA instrumentation. It is not a supervisor, browser extension, web server, or replacement launcher. The runner owns orchestration. The adapter talks only to the mod's existing loopback bridge on `127.0.0.1:24783`.
 
