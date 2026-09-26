@@ -894,7 +894,7 @@ namespace UnspottableExpanded
 
                     if (string.Equals(activeScene, PostStartMenuScene, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (PressQaKeyboardSpace(320))
+                        if (PressQaOfficialKeyboardSpace(320))
                         {
                             RetryQaGameplay("pressed official keyboard Space through Rewired.Keyboard at Local/Online menu",
                                 0.90f, 60f);
@@ -906,7 +906,7 @@ namespace UnspottableExpanded
                         return;
                     }
 
-                    bool bootSpace = PressQaKeyboardSpace(260);
+                    bool bootSpace = PressQaOfficialKeyboardSpace(260);
                     RetryQaGameplay("waiting for game's normal boot to reach Local/Online menu; scene=" + activeScene +
                         (bootSpace ? "; keyboard=Space" : "; keyboard=unavailable"),
                         0.85f, 60f);
@@ -955,7 +955,7 @@ namespace UnspottableExpanded
                         return;
                     }
 
-                    if (!PressQaKeyboardSpace(320))
+                    if (!PressQaOfficialKeyboardSpace(320))
                     {
                         RetryQaGameplay("P1 keyboard join unavailable; Rewired.Keyboard Space injection not installed",
                             0.75f, 20f);
@@ -2084,6 +2084,82 @@ namespace UnspottableExpanded
             }
 
             return "{\"ok\":false,\"error\":\"unknown input op\"}";
+        }
+
+        private bool PressQaOfficialKeyboardSpace(int ms)
+        {
+            if (!_qaInputEnabled || !SafeRewiredReady())
+                return false;
+
+            int mappedActions = 0;
+            int keyboardOwners = 0;
+            try
+            {
+                Player systemPlayer = ReInput.players.GetSystemPlayer();
+                mappedActions += InjectQaMappedSpaceForPlayer(systemPlayer, ms, ref keyboardOwners);
+
+                for (int i = 0; i < ReInput.players.playerCount; i++)
+                {
+                    Player player = ReInput.players.Players[i];
+                    mappedActions += InjectQaMappedSpaceForPlayer(player, ms, ref keyboardOwners);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("QA H2.6 keyboard-map discovery failed: " + ex.GetType().Name + ": " + ex.Message);
+            }
+
+            bool rawKeyboard = PressQaKeyboardSpace(ms);
+            Logger.LogInfo("QA H2.6 OFFICIAL KEYBOARD SPACE: owners=" + keyboardOwners +
+                ", mappedActions=" + mappedActions + ", rawKeyboard=" + rawKeyboard + ".");
+            return mappedActions > 0 || rawKeyboard;
+        }
+
+        private int InjectQaMappedSpaceForPlayer(Player player, int ms, ref int keyboardOwners)
+        {
+            if (player == null)
+                return 0;
+
+            bool hasKeyboard = false;
+            try { hasKeyboard = player.controllers.hasKeyboard; }
+            catch { }
+            if (!hasKeyboard)
+                return 0;
+
+            keyboardOwners++;
+            int injected = 0;
+            HashSet<string> seenActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                foreach (ControllerMap map in player.controllers.maps.GetMaps(ControllerType.Keyboard, 0))
+                {
+                    if (map == null || !map.enabled)
+                        continue;
+
+                    foreach (ActionElementMap elementMap in map.AllMaps)
+                    {
+                        if (elementMap == null || !elementMap.enabled ||
+                            elementMap.keyboardKeyCode != KeyboardKeyCode.Space)
+                            continue;
+
+                        InputAction action = ReInput.mapping.GetAction(elementMap.actionId);
+                        string actionName = action == null ? string.Empty : action.name;
+                        if (string.IsNullOrEmpty(actionName) || !seenActions.Add(actionName))
+                            continue;
+
+                        PressQaButton(player.id, actionName, ms);
+                        injected++;
+                        Logger.LogInfo("QA H2.6 KEYBOARD MAP: playerId=" + player.id +
+                            " Space -> action '" + actionName + "'.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("QA H2.6 keyboard-map scan failed for playerId=" + player.id +
+                    ": " + ex.GetType().Name + ": " + ex.Message);
+            }
+            return injected;
         }
 
         private bool PressQaKeyboardSpace(int ms)
